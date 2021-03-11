@@ -44,7 +44,9 @@ public class BrokerProperties {
     private boolean useEpoll = false;
 
     /**
-     * 心跳时间(秒), 默认值60秒, 客户端连接时可指定
+     * 心跳检测时间(秒), 默认值60秒； 客户端连接时可指定
+     *
+     * @link https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901045
      */
     private int keepAlive = 60;
 
@@ -62,6 +64,11 @@ public class BrokerProperties {
      * TCP参数, 是否禁用Nagle算法，默认禁用
      */
     private boolean tcpNoDelay = true;
+
+    /**
+     * TCP参数, 单次发送数据大小，默认：8092 bytes
+     */
+    private int payloadLength = 8092;
 
     /**
      * 集群配置, 是否基于组播发现, 默认开启
@@ -175,6 +182,14 @@ public class BrokerProperties {
 
     public void setTcpNoDelay(boolean tcpNoDelay) {
         this.tcpNoDelay = tcpNoDelay;
+    }
+
+    public int getPayloadLength() {
+        return payloadLength;
+    }
+
+    public void setPayloadLength(int payloadLength) {
+        this.payloadLength = payloadLength;
     }
 
     public boolean isEnableMulticastGroup() {

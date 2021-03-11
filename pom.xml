@@ -4,6 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+
     <groupId>jmq-broker</groupId>
     <artifactId>github.micro-galaxy.mqtt.broker</artifactId>
     <packaging>pom</packaging>
@@ -18,6 +19,7 @@
     <properties>
         <jmq-broker.version>1.0</jmq-broker.version>
         <io.netty.version>4.1.9.Final</io.netty.version>
+        <spring-boot.version>2.3.9.RELEASE</spring-boot.version>
     </properties>
 
     <!--依赖-->
@@ -42,6 +44,18 @@
             <artifactId>netty-transport-native-epoll</artifactId>
             <classifier>linux-x86_64</classifier>
             <version>${io.netty.version}</version>
+        </dependency>
+
+        <!--spring stater-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+            <version>${spring-boot.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <version>${spring-boot.version}</version>
         </dependency>
     </dependencies>
 
