@@ -4,6 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+
     <parent>
         <groupId>jmq-broker</groupId>
         <artifactId>github.micro-galaxy.mqtt.broker</artifactId>
@@ -13,5 +14,13 @@
     <!--    模块-->
     <artifactId>core</artifactId>
 
+    <dependencies>
+        <dependency>
+            <groupId>jmq-broker</groupId>
+            <artifactId>common</artifactId>
+            <version>${jmq-broker.version}</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
 
 </project>
