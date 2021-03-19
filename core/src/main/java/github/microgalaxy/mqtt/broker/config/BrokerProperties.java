@@ -1,10 +1,15 @@
 package github.microgalaxy.mqtt.broker.config;
 
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
+
 /**
  * 服务配置
  *
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
+@Configuration
+@ConfigurationProperties("spring.jmq.broker")
 public class BrokerProperties {
     public static final String JMQ_BROKER = "jmq-broker";
 
