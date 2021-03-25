@@ -7,26 +7,31 @@ import io.netty.handler.codec.mqtt.MqttMessageType;
 import org.springframework.stereotype.Component;
 
 /**
- * QoS2消息释放
+ * PING请求
  *
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
 @Component
-public class MqttPubRelImpl<T extends MqttMessageType, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
+public class MqttPingReq<T extends MqttMessageType, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
 
+    /**
+     * 获取消息类型
+     *
+     * @return
+     */
     @Override
     protected T getType() {
-        return (T) T.PUBREL;
+        return (T) T.PINGREQ;
     }
 
     /**
-     * QoS2消息释放消息
+     * PING请求消息
      *
-     * @param channel
      * @param msg
      */
     @Override
     public void onMqttMsg(Channel channel, M msg) {
 
     }
+
 }

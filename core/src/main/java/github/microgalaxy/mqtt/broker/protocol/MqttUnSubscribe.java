@@ -1,26 +1,25 @@
 package github.microgalaxy.mqtt.broker.protocol;
 
-import github.microgalaxy.mqtt.broker.protocol.AbstractMqttMsgProtocol;
 import io.netty.channel.Channel;
-import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 import org.springframework.stereotype.Component;
 
 /**
- * 发布消息
+ * 取消订阅
  *
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
 @Component
-public class MqttPublishImpl<T extends MqttMessageType, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
+public class MqttUnSubscribe<T extends MqttMessageType, M extends MqttUnsubscribeMessage> extends AbstractMqttMsgProtocol<T, M> {
 
     @Override
     protected T getType() {
-        return (T) T.PUBLISH;
+        return (T) T.UNSUBSCRIBE;
     }
 
     /**
-     * 发布消息
+     * 取消订阅消息
      *
      * @param channel
      * @param msg

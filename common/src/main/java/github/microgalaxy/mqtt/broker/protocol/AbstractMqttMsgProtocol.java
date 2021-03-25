@@ -25,8 +25,8 @@ public abstract class AbstractMqttMsgProtocol<T extends MqttMessageType, M exten
      * @return
      */
     @PostConstruct
-    void registerMsgProcess() {
-        MqttMsgProtocolFactory.registerMsgProcess(getType(), this);
+    void registerMsgHandle() {
+        MqttMsgProtocolFactory.registerMsgHandle(getType(), this);
     }
 
 

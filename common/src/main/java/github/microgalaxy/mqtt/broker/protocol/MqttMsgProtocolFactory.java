@@ -22,7 +22,7 @@ public  class MqttMsgProtocolFactory {
     private MqttMsgProtocolFactory() {
     }
 
-    static void registerMsgProcess(MqttMessageType type, IMqttMsgProtocol process) {
+    static void registerMsgHandle(MqttMessageType type, IMqttMsgProtocol process) {
         MQTT_MSG_PROTOCOL_POOL.put(type, process);
     }
 

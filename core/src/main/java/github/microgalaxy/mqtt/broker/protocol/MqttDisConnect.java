@@ -7,26 +7,31 @@ import io.netty.handler.codec.mqtt.MqttMessageType;
 import org.springframework.stereotype.Component;
 
 /**
- * QoS2消息完成
+ * 断开连接
  *
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
 @Component
-public class MqttPubCompImpl<T extends MqttMessageType, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
+public class MqttDisConnect<T extends MqttMessageType, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
 
+    /**
+     * 获取消息类型
+     *
+     * @return
+     */
     @Override
     protected T getType() {
-        return (T) T.PUBCOMP;
+        return (T) T.DISCONNECT;
     }
 
     /**
-     * QoS2消息完成消息
+     * 断开连接消息
      *
-     * @param channel
      * @param msg
      */
     @Override
     public void onMqttMsg(Channel channel, M msg) {
 
     }
+
 }

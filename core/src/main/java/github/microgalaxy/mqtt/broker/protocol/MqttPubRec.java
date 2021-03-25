@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
 @Component
-public class MqttPubRecImpl<T extends MqttMessageType, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
+public class MqttPubRec<T extends MqttMessageType, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
 
     @Override
     protected T getType() {

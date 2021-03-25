@@ -1,37 +1,31 @@
 package github.microgalaxy.mqtt.broker.protocol;
 
-import github.microgalaxy.mqtt.broker.protocol.AbstractMqttMsgProtocol;
 import io.netty.channel.Channel;
-import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
 import org.springframework.stereotype.Component;
 
 /**
- * PING请求
+ * 订阅主题
  *
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
 @Component
-public class MqttPingReqImpl<T extends MqttMessageType, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
+public class MqttSubscribe<T extends MqttMessageType, M extends MqttSubscribeMessage> extends AbstractMqttMsgProtocol<T, M> {
 
-    /**
-     * 获取消息类型
-     *
-     * @return
-     */
     @Override
     protected T getType() {
-        return (T) T.PINGREQ;
+        return (T) T.SUBSCRIBE;
     }
 
     /**
-     * PING请求消息
+     * 订阅主题消息
      *
+     * @param channel
      * @param msg
      */
     @Override
     public void onMqttMsg(Channel channel, M msg) {
 
     }
-
 }

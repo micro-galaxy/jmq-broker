@@ -1,25 +1,26 @@
 package github.microgalaxy.mqtt.broker.protocol;
 
+import github.microgalaxy.mqtt.broker.protocol.AbstractMqttMsgProtocol;
 import io.netty.channel.Channel;
+import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageType;
-import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
 import org.springframework.stereotype.Component;
 
 /**
- * 订阅主题
+ * QoS2消息完成
  *
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
 @Component
-public class MqttSubscribeImpl<T extends MqttMessageType, M extends MqttSubscribeMessage> extends AbstractMqttMsgProtocol<T, M> {
+public class MqttPubComp<T extends MqttMessageType, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
 
     @Override
     protected T getType() {
-        return (T) T.SUBSCRIBE;
+        return (T) T.PUBCOMP;
     }
 
     /**
-     * 订阅主题消息
+     * QoS2消息完成消息
      *
      * @param channel
      * @param msg
