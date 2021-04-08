@@ -20,6 +20,7 @@
         <jmq-broker.version>1.0</jmq-broker.version>
         <io.netty.version>4.1.9.Final</io.netty.version>
         <spring-boot.version>2.3.9.RELEASE</spring-boot.version>
+        <slf4j.version>1.7.30</slf4j.version>
     </properties>
 
     <!--依赖-->
@@ -44,6 +45,12 @@
             <artifactId>netty-transport-native-epoll</artifactId>
             <classifier>linux-x86_64</classifier>
             <version>${io.netty.version}</version>
+        </dependency>
+
+        <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
         </dependency>
 
         <!--spring stater-->
