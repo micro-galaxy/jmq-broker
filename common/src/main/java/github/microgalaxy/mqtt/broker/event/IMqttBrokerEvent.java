@@ -36,7 +36,7 @@ public interface IMqttBrokerEvent {
     void onDisConnected(String clientId, String username, Date disConnectedTime);
 
     /**
-     * 客户但消息抵达事件
+     * 客户端消息抵达事件
      *
      * @param clientId
      * @param username
