@@ -1,7 +1,10 @@
 package github.microgalaxy.mqtt.broker.config;
 
+import io.netty.util.internal.ThreadLocalRandom;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.UUID;
 
 /**
  * 服务配置
@@ -11,12 +14,12 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConfigurationProperties("spring.jmq.broker")
 public class BrokerProperties {
-    public static final String JMQ_BROKER = "jmq-broker";
+    public static final String JMQ_BROKER = "jmq-broker-";
 
     /**
      * 节点id
      */
-    private String brokerId;
+    private final String brokerId = JMQ_BROKER + UUID.randomUUID().toString();
     /**
      * mqtt默认端口：1883
      */
@@ -71,7 +74,7 @@ public class BrokerProperties {
     private boolean tcpNoDelay = true;
 
     /**
-     * TCP参数, 单次发送数据大小，默认：8092 bytes
+     * MqttDecoder参数, MqttDecoder 单次发送数据大小，默认：8092 bytes
      */
     private int payloadLength = 8092;
 
@@ -95,10 +98,6 @@ public class BrokerProperties {
 
     public String getBrokerId() {
         return brokerId;
-    }
-
-    public void setBrokerId(String brokerId) {
-        this.brokerId = brokerId;
     }
 
     public int getMqttPort() {

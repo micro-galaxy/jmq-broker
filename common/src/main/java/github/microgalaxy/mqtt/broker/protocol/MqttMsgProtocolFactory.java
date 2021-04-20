@@ -30,6 +30,8 @@ public  class MqttMsgProtocolFactory {
         IMqttMsgProtocol process = MQTT_MSG_PROTOCOL_POOL.get(msg.fixedHeader().messageType());
         if (!ObjectUtils.isEmpty(process)) {
             process.onMqttMsg(channel, msg);
+        }else {
+            LOGGER.warn("The Mqtt msg handler not implemented,msg:{}",msg.toString());
         }
     }
 }
