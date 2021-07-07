@@ -20,14 +20,14 @@ public final class DupPubRelMassage implements Serializable {
 
     private final int massageId;
 
-    private final byte[] massagePayload;
+    private final String payload;
 
-    public DupPubRelMassage(String clientId, String topic, MqttQoS qos, int massageId, byte[] massagePayload) {
+    public DupPubRelMassage(String clientId, String topic, MqttQoS qos, int massageId, String payload) {
         this.clientId = clientId;
         this.topic = topic;
         this.qos = qos;
         this.massageId = massageId;
-        this.massagePayload = massagePayload;
+        this.payload = payload;
     }
 
     public String getClientId() {
@@ -46,7 +46,7 @@ public final class DupPubRelMassage implements Serializable {
         return massageId;
     }
 
-    public byte[] getMassagePayload() {
-        return massagePayload;
+    public String getPayload() {
+        return payload;
     }
 }

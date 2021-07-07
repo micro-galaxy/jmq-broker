@@ -20,7 +20,7 @@ public final class InternalMassage implements Serializable {
 
     private int qos;
 
-    private byte[] payLoad;
+    private String payload;
 
     private boolean retain;
 
@@ -51,12 +51,12 @@ public final class InternalMassage implements Serializable {
         this.qos = qos;
     }
 
-    public byte[] getPayLoad() {
-        return payLoad;
+    public String getPayload() {
+        return payload;
     }
 
-    public void setPayLoad(byte[] payLoad) {
-        this.payLoad = payLoad;
+    public void setPayload(String payload) {
+        this.payload = payload;
     }
 
     public boolean isRetain() {

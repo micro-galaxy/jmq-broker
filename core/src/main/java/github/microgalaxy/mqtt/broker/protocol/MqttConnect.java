@@ -7,7 +7,6 @@ import github.microgalaxy.mqtt.broker.client.ISubscribeStore;
 import github.microgalaxy.mqtt.broker.client.Session;
 import github.microgalaxy.mqtt.broker.store.IDupPubRelMassage;
 import github.microgalaxy.mqtt.broker.store.IDupPublishMassage;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.*;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -74,8 +73,24 @@ public class MqttConnect<T extends MqttMessageType, M extends MqttConnectMessage
         processDupMsg(channel, msg);
     }
 
-    //TODO 需要实现消息顺序
     private void processDupMsg(Channel channel, M msg) {
+        if (msg.variableHeader().isCleanSession())
+            return;
+        dupPublishMassageServer.get(msg.payload().clientIdentifier())
+                .forEach(dupPublishMassage -> {
+                    MqttPublishMessage publishMessage = (MqttPublishMessage) MqttMessageFactory.newMessage(
+                            new MqttFixedHeader(MqttMessageType.PUBLISH, true, dupPublishMassage.getQos(), false, 0),
+                            new MqttPublishVariableHeader(dupPublishMassage.getTopic(), dupPublishMassage.getMassageId()),
+                            dupPublishMassage.getPayload());
+                    channel.writeAndFlush(publishMessage);
+                });
+        dupPubRelMassageServer.get(msg.payload().clientIdentifier())
+                .forEach(dupPubRelMassage -> {
+                    MqttMessage pubRelMassage = MqttMessageFactory.newMessage(
+                            new MqttFixedHeader(MqttMessageType.PUBREL, true, MqttQoS.AT_MOST_ONCE, false, 0),
+                            MqttMessageIdVariableHeader.from(dupPubRelMassage.getMassageId()), null);
+                    channel.writeAndFlush(pubRelMassage);
+                });
 
     }
 
