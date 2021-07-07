@@ -1,9 +1,24 @@
 package github.microgalaxy.mqtt.broker.protocol;
 
+import github.microgalaxy.mqtt.broker.auth.LoginAuth;
+import github.microgalaxy.mqtt.broker.auth.LoginAuthInterface;
+import github.microgalaxy.mqtt.broker.client.ISessionStore;
+import github.microgalaxy.mqtt.broker.client.ISubscribeStore;
+import github.microgalaxy.mqtt.broker.client.Session;
+import github.microgalaxy.mqtt.broker.store.IDupPubRelMassage;
+import github.microgalaxy.mqtt.broker.store.IDupPublishMassage;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
-import io.netty.handler.codec.mqtt.MqttConnectMessage;
-import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.*;
+import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.util.AttributeKey;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ObjectUtils;
+import org.springframework.util.StringUtils;
+
+import java.net.InetSocketAddress;
+import java.util.Arrays;
 
 /**
  * 发起连接
@@ -12,6 +27,16 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class MqttConnect<T extends MqttMessageType, M extends MqttConnectMessage> extends AbstractMqttMsgProtocol<T, M> {
+    @Autowired
+    private LoginAuthInterface authServer;
+    @Autowired
+    private ISessionStore sessionServer;
+    @Autowired
+    private ISubscribeStore subscribeServer;
+    @Autowired
+    private IDupPublishMassage dupPublishMassageServer;
+    @Autowired
+    private IDupPubRelMassage dupPubRelMassageServer;
 
     /**
      * 获取消息类型
@@ -30,7 +55,124 @@ public class MqttConnect<T extends MqttMessageType, M extends MqttConnectMessage
      */
     @Override
     public void onMqttMsg(Channel channel, M msg) {
+        //处理编码异常、客户端id异常
+        boolean formatOk = validMsgFormat(channel, msg);
+        if (!formatOk) {
+            return;
+        }
+        //客户端认证
+        boolean authOk = loginAuth(channel, msg);
+        if (!authOk) {
+            return;
+        }
 
+        //登录
+        singleLogin(channel, msg);
+        //处理心跳消息
+        heartbeat(channel, msg);
+        //处理qos1，qos2未完成的消息
+        processDupMsg(channel, msg);
+    }
+
+    //TODO 需要实现消息顺序
+    private void processDupMsg(Channel channel, M msg) {
+
+    }
+
+    private void heartbeat(Channel channel, M msg) {
+        if (msg.variableHeader().keepAliveTimeSeconds() > 0) {
+            if (channel.pipeline().names().contains("idleStateHandler"))
+                channel.pipeline().remove("idleStateHandler");
+            channel.pipeline().addFirst("idleStateHandler", new IdleStateHandler(0, 0, Math.round(msg.variableHeader().keepAliveTimeSeconds() * 1.5f)));
+        }
+    }
+
+    private void singleLogin(Channel channel, M msg) {
+        String clientId = msg.payload().clientIdentifier();
+        Session previousSession = sessionServer.get(clientId);
+        if (!ObjectUtils.isEmpty(previousSession)) {
+            if (previousSession.isCleanSession()) {
+                sessionServer.remove(clientId);
+                subscribeServer.removeClient(clientId);
+                dupPublishMassageServer.removeClient(clientId);
+                dupPubRelMassageServer.removeClient(clientId);
+            }
+            previousSession.getChannel().close();
+        }
+
+        //遗嘱消息
+        MqttPublishMessage willMessage = null;
+        if (msg.variableHeader().isWillFlag()) {
+            willMessage = (MqttPublishMessage) MqttMessageFactory.newMessage(
+                    new MqttFixedHeader(MqttMessageType.PUBLISH, false, MqttQoS.valueOf(msg.variableHeader().willQos()), msg.variableHeader().isWillRetain(), 0),
+                    new MqttPublishVariableHeader(msg.payload().willTopic(), 0), msg.payload().willMessage());
+        }
+        channel.attr(AttributeKey.valueOf("clientId")).set(msg.payload().clientIdentifier());
+        Session curSession = new Session(clientId, msg.payload().userName(), channel,
+                msg.variableHeader().isCleanSession(), willMessage, msg.variableHeader().version());
+        sessionServer.put(clientId, curSession);
+
+        MqttConnAckMessage connAckMessage = (MqttConnAckMessage) MqttMessageFactory.newMessage(
+                new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_MOST_ONCE, false, 0),
+                new MqttConnAckVariableHeader(MqttConnectReturnCode.CONNECTION_ACCEPTED, msg.variableHeader().isCleanSession()), null);
+        channel.writeAndFlush(connAckMessage);
+        log.info("Client connected: clientId:{}, clearSession:{}", channel, msg.variableHeader().isCleanSession());
+    }
+
+    private boolean loginAuth(Channel channel, M msg) {
+        int version = msg.variableHeader().version();
+        MqttVersion mqttVersion = Arrays.stream(MqttVersion.values()).filter(v -> version == v.protocolLevel()).findFirst().get();
+        MqttConnectPayload payload = msg.payload();
+        InetSocketAddress socketAddress = (InetSocketAddress) channel.remoteAddress();
+        LoginAuth loginMode = new LoginAuth(payload.clientIdentifier(), payload.userName(), payload.password(),
+                socketAddress.getHostString(), mqttVersion.name(), socketAddress.getPort());
+        boolean authOk = authServer.loginAuth(loginMode);
+        if (!authOk) {
+            if (log.isDebugEnabled())
+                log.debug("Bad username or password:{}", msg.decoderResult().toString());
+            MqttConnAckMessage connAckMessage = (MqttConnAckMessage) MqttMessageFactory.newMessage(
+                    new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_MOST_ONCE, false, 0),
+                    new MqttConnAckVariableHeader(MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD, false), null);
+            channel.writeAndFlush(connAckMessage);
+            channel.close();
+        }
+        return authOk;
+    }
+
+    private boolean validMsgFormat(Channel channel, M msg) {
+        boolean enbDebug = log.isDebugEnabled();
+        //解码失败
+        if (msg.decoderResult().isFailure()) {
+            Throwable cause = msg.decoderResult().cause();
+            if (cause instanceof MqttUnacceptableProtocolVersionException) {
+                if (enbDebug)
+                    log.debug("Unsupported versions of the mqtt protocol:{}", msg.decoderResult().toString());
+                MqttConnAckMessage connAckMessage = (MqttConnAckMessage) MqttMessageFactory.newMessage(
+                        new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_MOST_ONCE, false, 0),
+                        new MqttConnAckVariableHeader(MqttConnectReturnCode.CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION, false), null);
+                channel.writeAndFlush(connAckMessage);
+            } else if (cause instanceof MqttIdentifierRejectedException) {
+                if (enbDebug)
+                    log.debug("Request contains an invalid client identifier:{}", msg.decoderResult().toString());
+                MqttConnAckMessage connAckMessage = (MqttConnAckMessage) MqttMessageFactory.newMessage(
+                        new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_MOST_ONCE, false, 0),
+                        new MqttConnAckVariableHeader(MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED, false), null);
+                channel.writeAndFlush(connAckMessage);
+            }
+            channel.close();
+            return false;
+        }
+        if (StringUtils.isEmpty(msg.payload().clientIdentifier())) {
+            if (enbDebug)
+                log.debug("Request contains an invalid client identifier:{}", msg.decoderResult().toString());
+            MqttConnAckMessage connAckMessage = (MqttConnAckMessage) MqttMessageFactory.newMessage(
+                    new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_MOST_ONCE, false, 0),
+                    new MqttConnAckVariableHeader(MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED, false), null);
+            channel.writeAndFlush(connAckMessage);
+            channel.close();
+            return false;
+        }
+        return true;
     }
 
 }

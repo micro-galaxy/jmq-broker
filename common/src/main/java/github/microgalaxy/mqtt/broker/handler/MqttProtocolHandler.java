@@ -10,7 +10,7 @@ import io.netty.handler.codec.mqtt.MqttMessage;
  *
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
-final class MqttProtocolHandler extends SimpleChannelInboundHandler<MqttMessage> {
+public abstract class MqttProtocolHandler extends SimpleChannelInboundHandler<MqttMessage> {
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, MqttMessage msg) throws Exception {

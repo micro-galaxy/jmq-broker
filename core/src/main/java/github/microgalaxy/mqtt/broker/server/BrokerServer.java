@@ -42,6 +42,7 @@ public class BrokerServer {
     private BrokerProperties brokerProperties;
     private EventLoopGroup bossGroup;
     private EventLoopGroup workerGroup;
+    private EventLoopGroup businessGroup;
     private Channel mqttChannel;
     private Channel websocketChannel;
 
@@ -55,6 +56,7 @@ public class BrokerServer {
         LOGGER.info("Starting MQTT Broker ..., node:{}", brokerProperties.getBrokerId());
         bossGroup = brokerProperties.isUseEpoll() ? new EpollEventLoopGroup() : new NioEventLoopGroup();
         workerGroup = brokerProperties.isUseEpoll() ? new EpollEventLoopGroup() : new NioEventLoopGroup();
+        businessGroup = brokerProperties.isUseEpoll() ? new EpollEventLoopGroup() : new NioEventLoopGroup();
         mqttServer();
         websocketServer();
         LOGGER.info("MQTT Broker is running. Mqtt port:{}, Websocket port:{}", brokerProperties.getMqttPort(), brokerProperties.getMqttWsPort());
@@ -71,10 +73,10 @@ public class BrokerServer {
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
                         socketChannel.pipeline()
                                 //Netty 心跳检测
-                                .addLast("idleStateHandler", new IdleStateHandler(0, 0, brokerProperties.getKeepAlive()))
+                                .addFirst("idleStateHandler", new IdleStateHandler(0, 0, brokerProperties.getKeepAlive()))
                                 .addLast("decoder", new MqttDecoder(brokerProperties.getPayloadLength()))
                                 .addLast("encoder", MqttEncoder.INSTANCE)
-                                .addLast("mqttMsgHandler", new MqttMsgHandler());
+                                .addLast(businessGroup, "mqttMsgHandler", new MqttMsgHandler());
                     }
                 })
                 .option(ChannelOption.SO_BACKLOG, brokerProperties.getSoBacklog())
@@ -93,7 +95,7 @@ public class BrokerServer {
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
                         socketChannel.pipeline()
                                 //Netty 心跳检测
-                                .addLast("idleStateHandler", new IdleStateHandler(0, 0, brokerProperties.getKeepAlive()))
+                                .addFirst("idleStateHandler", new IdleStateHandler(0, 0, brokerProperties.getKeepAlive()))
                                 //将消息解码/编码为HTTP消息
                                 .addLast("http-codec", new HttpServerCodec())
                                 //将HTTP消息行、消息头、消息体合并为一条完整的HTTP消息（FullHttpRequest）
@@ -106,7 +108,7 @@ public class BrokerServer {
                                 .addLast("websocketToMqtt", new MqttWebsocketCodec())
                                 .addLast("decoder", new MqttDecoder(brokerProperties.getPayloadLength()))
                                 .addLast("encoder", MqttEncoder.INSTANCE)
-                                .addLast("mqttMsgHandler", new MqttMsgHandler());
+                                .addLast(businessGroup, "mqttMsgHandler", new MqttMsgHandler());
                     }
                 })
                 .option(ChannelOption.SO_BACKLOG, brokerProperties.getSoBacklog())

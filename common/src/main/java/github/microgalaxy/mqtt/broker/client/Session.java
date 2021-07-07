@@ -11,7 +11,7 @@ import java.io.Serializable;
  *
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
-final class Session implements Serializable {
+public final class Session implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private final String clientId;
