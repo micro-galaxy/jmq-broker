@@ -131,7 +131,7 @@ public class MqttConnect<T extends MqttMessageType, M extends MqttConnectMessage
                 new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_MOST_ONCE, false, 0),
                 new MqttConnAckVariableHeader(MqttConnectReturnCode.CONNECTION_ACCEPTED, msg.variableHeader().isCleanSession()), null);
         channel.writeAndFlush(connAckMessage);
-        log.info("Client connected: clientId:{}, clearSession:{}", channel, msg.variableHeader().isCleanSession());
+        log.info("CONNECT - Client connected: clientId:{}, clearSession:{}", clientId, msg.variableHeader().isCleanSession());
     }
 
     private boolean loginAuth(Channel channel, M msg) {

@@ -1,7 +1,5 @@
 package github.microgalaxy.mqtt.broker.massage;
 
-import io.netty.handler.codec.mqtt.MqttQoS;
-
 import java.io.Serializable;
 
 /**
@@ -14,39 +12,19 @@ public final class DupPubRelMassage implements Serializable {
 
     private final String clientId;
 
-    private final String topic;
-
-    private final MqttQoS qos;
-
     private final int massageId;
 
-    private final String payload;
-
-    public DupPubRelMassage(String clientId, String topic, MqttQoS qos, int massageId, String payload) {
+    public DupPubRelMassage(String clientId, int massageId) {
         this.clientId = clientId;
-        this.topic = topic;
-        this.qos = qos;
         this.massageId = massageId;
-        this.payload = payload;
     }
 
     public String getClientId() {
         return clientId;
     }
 
-    public String getTopic() {
-        return topic;
-    }
-
-    public MqttQoS getQos() {
-        return qos;
-    }
-
     public int getMassageId() {
         return massageId;
     }
 
-    public String getPayload() {
-        return payload;
-    }
 }

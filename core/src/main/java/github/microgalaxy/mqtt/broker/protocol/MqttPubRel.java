@@ -2,8 +2,8 @@ package github.microgalaxy.mqtt.broker.protocol;
 
 import github.microgalaxy.mqtt.broker.protocol.AbstractMqttMsgProtocol;
 import io.netty.channel.Channel;
-import io.netty.handler.codec.mqtt.MqttMessage;
-import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.*;
+import io.netty.util.AttributeKey;
 import org.springframework.stereotype.Component;
 
 /**
@@ -27,6 +27,12 @@ public class MqttPubRel<T extends MqttMessageType, M extends MqttMessage> extend
      */
     @Override
     public void onMqttMsg(Channel channel, M msg) {
-
+        String clientId = (String) channel.attr(AttributeKey.valueOf("clientId")).get();
+        int messageId = ((MqttMessageIdVariableHeader) msg.variableHeader()).messageId();
+        MqttMessage pubCompMqttMessage = MqttMessageFactory.newMessage(
+                new MqttFixedHeader(MqttMessageType.PUBCOMP, false, MqttQoS.AT_MOST_ONCE, false, 0),
+                MqttMessageIdVariableHeader.from(messageId), null);
+        log.debug("PUBREL - PubRel request arrives: clientId:{}, messageId:{}",clientId, messageId);
+        channel.writeAndFlush(pubCompMqttMessage);
     }
 }

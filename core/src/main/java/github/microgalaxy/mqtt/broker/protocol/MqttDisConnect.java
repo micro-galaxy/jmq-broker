@@ -1,9 +1,15 @@
 package github.microgalaxy.mqtt.broker.protocol;
 
-import github.microgalaxy.mqtt.broker.protocol.AbstractMqttMsgProtocol;
+import github.microgalaxy.mqtt.broker.client.ISessionStore;
+import github.microgalaxy.mqtt.broker.client.ISubscribeStore;
+import github.microgalaxy.mqtt.broker.client.Session;
+import github.microgalaxy.mqtt.broker.store.IDupPubRelMassage;
+import github.microgalaxy.mqtt.broker.store.IDupPublishMassage;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.util.AttributeKey;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -13,6 +19,14 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class MqttDisConnect<T extends MqttMessageType, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
+    @Autowired
+    private ISessionStore sessionServer;
+    @Autowired
+    private ISubscribeStore subscribeServer;
+    @Autowired
+    private IDupPublishMassage dupPublishMassageServer;
+    @Autowired
+    private IDupPubRelMassage dupPubRelMassageServer;
 
     /**
      * 获取消息类型
@@ -31,7 +45,16 @@ public class MqttDisConnect<T extends MqttMessageType, M extends MqttMessage> ex
      */
     @Override
     public void onMqttMsg(Channel channel, M msg) {
-
+        String clientId = (String) channel.attr(AttributeKey.valueOf("clientId")).get();
+        Session session = sessionServer.get(clientId);
+        if(session.isCleanSession()){
+            subscribeServer.removeClient(clientId);
+            dupPublishMassageServer.removeClient(clientId);
+            dupPubRelMassageServer.removeClient(clientId);
+        }
+        sessionServer.remove(clientId);
+        channel.close();
+        log.info("DISCONNECT - Client disconnected: clientId:{}, clearSession:{}", clientId, session.isCleanSession());
     }
 
 }
