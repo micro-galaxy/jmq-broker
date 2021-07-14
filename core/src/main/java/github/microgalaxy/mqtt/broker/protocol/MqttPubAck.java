@@ -1,10 +1,11 @@
 package github.microgalaxy.mqtt.broker.protocol;
 
 import github.microgalaxy.mqtt.broker.massage.IMassagePacketId;
-import github.microgalaxy.mqtt.broker.protocol.AbstractMqttMsgProtocol;
 import github.microgalaxy.mqtt.broker.store.IDupPublishMassage;
 import io.netty.channel.Channel;
-import io.netty.handler.codec.mqtt.*;
+import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
+import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.util.AttributeKey;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

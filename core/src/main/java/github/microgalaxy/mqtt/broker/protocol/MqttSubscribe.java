@@ -3,7 +3,10 @@ package github.microgalaxy.mqtt.broker.protocol;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
+import io.netty.handler.codec.mqtt.MqttTopicSubscription;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 /**
  * 订阅主题
@@ -26,6 +29,7 @@ public class MqttSubscribe<T extends MqttMessageType, M extends MqttSubscribeMes
      */
     @Override
     public void onMqttMsg(Channel channel, M msg) {
+        List<MqttTopicSubscription> mqttTopicSubscriptions = msg.payload().topicSubscriptions();
 
     }
 }

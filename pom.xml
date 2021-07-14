@@ -19,7 +19,7 @@
     <!--属性-->
     <properties>
         <jmq-broker.version>1.0</jmq-broker.version>
-        <io.netty.version>4.1.9.Final</io.netty.version>
+        <io.netty.version>4.1.65.Final</io.netty.version>
         <spring-boot.version>2.3.9.RELEASE</spring-boot.version>
         <slf4j.version>1.7.30</slf4j.version>
     </properties>

@@ -1,7 +1,6 @@
 package github.microgalaxy.mqtt.broker.protocol;
 
 import github.microgalaxy.mqtt.broker.massage.DupPubRelMassage;
-import github.microgalaxy.mqtt.broker.protocol.AbstractMqttMsgProtocol;
 import github.microgalaxy.mqtt.broker.store.IDupPubRelMassage;
 import github.microgalaxy.mqtt.broker.store.IDupPublishMassage;
 import io.netty.channel.Channel;

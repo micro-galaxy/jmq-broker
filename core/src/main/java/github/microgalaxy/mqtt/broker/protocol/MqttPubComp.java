@@ -1,7 +1,6 @@
 package github.microgalaxy.mqtt.broker.protocol;
 
 import github.microgalaxy.mqtt.broker.massage.IMassagePacketId;
-import github.microgalaxy.mqtt.broker.protocol.AbstractMqttMsgProtocol;
 import github.microgalaxy.mqtt.broker.store.IDupPubRelMassage;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.MqttMessage;

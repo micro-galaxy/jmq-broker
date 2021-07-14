@@ -114,7 +114,7 @@ public class MqttConnect<T extends MqttMessageType, M extends MqttConnectMessage
             }
             previousSession.getChannel().close();
         }
-
+//TODO will support mqtt v5
         //遗嘱消息
         MqttPublishMessage willMessage = null;
         if (msg.variableHeader().isWillFlag()) {
@@ -135,8 +135,7 @@ public class MqttConnect<T extends MqttMessageType, M extends MqttConnectMessage
     }
 
     private boolean loginAuth(Channel channel, M msg) {
-        int version = msg.variableHeader().version();
-        MqttVersion mqttVersion = Arrays.stream(MqttVersion.values()).filter(v -> version == v.protocolLevel()).findFirst().get();
+        MqttVersion mqttVersion = MqttVersion.fromProtocolNameAndLevel(msg.variableHeader().name(),(byte) msg.variableHeader().version());
         MqttConnectPayload payload = msg.payload();
         InetSocketAddress socketAddress = (InetSocketAddress) channel.remoteAddress();
         LoginAuth loginMode = new LoginAuth(payload.clientIdentifier(), payload.userName(), payload.password(),
@@ -145,9 +144,8 @@ public class MqttConnect<T extends MqttMessageType, M extends MqttConnectMessage
         if (!authOk) {
             if (log.isDebugEnabled())
                 log.debug("Bad username or password:{}", msg.decoderResult().toString());
-            MqttConnAckMessage connAckMessage = (MqttConnAckMessage) MqttMessageFactory.newMessage(
-                    new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_MOST_ONCE, false, 0),
-                    new MqttConnAckVariableHeader(MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD, false), null);
+            MqttMessageBuilders.ConnAckBuilder connAckMessage = MqttMessageBuilders.connAck().returnCode(MqttVersion.MQTT_5 == mqttVersion ?
+                    MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USERNAME_OR_PASSWORD : MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD)
             channel.writeAndFlush(connAckMessage);
             channel.close();
         }
@@ -162,16 +160,16 @@ public class MqttConnect<T extends MqttMessageType, M extends MqttConnectMessage
             if (cause instanceof MqttUnacceptableProtocolVersionException) {
                 if (enbDebug)
                     log.debug("Unsupported versions of the mqtt protocol:{}", msg.decoderResult().toString());
-                MqttConnAckMessage connAckMessage = (MqttConnAckMessage) MqttMessageFactory.newMessage(
-                        new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_MOST_ONCE, false, 0),
-                        new MqttConnAckVariableHeader(MqttConnectReturnCode.CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION, false), null);
+                MqttMessageBuilders.ConnAckBuilder connAckMessage = MqttMessageBuilders.connAck()
+                        .returnCode(MqttConnectReturnCode.CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION)
+                        .sessionPresent(false);
                 channel.writeAndFlush(connAckMessage);
             } else if (cause instanceof MqttIdentifierRejectedException) {
                 if (enbDebug)
                     log.debug("Request contains an invalid client identifier:{}", msg.decoderResult().toString());
-                MqttConnAckMessage connAckMessage = (MqttConnAckMessage) MqttMessageFactory.newMessage(
-                        new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_MOST_ONCE, false, 0),
-                        new MqttConnAckVariableHeader(MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED, false), null);
+                MqttMessageBuilders.ConnAckBuilder connAckMessage = MqttMessageBuilders.connAck()
+                        .returnCode(MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED)
+                        .sessionPresent(false);
                 channel.writeAndFlush(connAckMessage);
             }
             channel.close();
@@ -180,9 +178,11 @@ public class MqttConnect<T extends MqttMessageType, M extends MqttConnectMessage
         if (StringUtils.isEmpty(msg.payload().clientIdentifier())) {
             if (enbDebug)
                 log.debug("Request contains an invalid client identifier:{}", msg.decoderResult().toString());
-            MqttConnAckMessage connAckMessage = (MqttConnAckMessage) MqttMessageFactory.newMessage(
-                    new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_MOST_ONCE, false, 0),
-                    new MqttConnAckVariableHeader(MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED, false), null);
+            MqttVersion mqttVersion = MqttVersion.fromProtocolNameAndLevel(msg.variableHeader().name(), (byte) msg.variableHeader().version());
+            MqttMessageBuilders.ConnAckBuilder connAckMessage = MqttMessageBuilders.connAck()
+                    .returnCode(MqttVersion.MQTT_5 == mqttVersion ? MqttConnectReturnCode.CONNECTION_REFUSED_CLIENT_IDENTIFIER_NOT_VALID
+                            : MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED)
+                    .sessionPresent(false);
             channel.writeAndFlush(connAckMessage);
             channel.close();
             return false;
