@@ -72,7 +72,7 @@ public class BrokerServer {
                     @Override
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
                         socketChannel.pipeline()
-                                //Netty 心跳检测
+                                //Netty heartbeat detection
                                 .addFirst("idleStateHandler", new IdleStateHandler(0, 0, brokerProperties.getKeepAlive()))
                                 .addLast("decoder", new MqttDecoder(brokerProperties.getPayloadLength()))
                                 .addLast("encoder", MqttEncoder.INSTANCE)
@@ -94,15 +94,15 @@ public class BrokerServer {
                     @Override
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
                         socketChannel.pipeline()
-                                //Netty 心跳检测
+                                //Netty heartbeat detection
                                 .addFirst("idleStateHandler", new IdleStateHandler(0, 0, brokerProperties.getKeepAlive()))
-                                //将消息解码/编码为HTTP消息
+                                //Decoding/encoding of messages into HTTP messages
                                 .addLast("http-codec", new HttpServerCodec())
-                                //将HTTP消息行、消息头、消息体合并为一条完整的HTTP消息（FullHttpRequest）
+                                //Combine the HTTP message line, message header, and message body into one complete HTTP message (FullHttpRequest)
                                 .addLast("aggregator",
-                                        //请求头 + body
+                                        //Request header + body
                                         new HttpObjectAggregator(512 * 1024 + brokerProperties.getPayloadLength(), true))
-                                //HTTP消息压缩
+                                //HTTP message compression
                                 .addLast("compressor", new HttpContentCompressor())
                                 .addLast("websocketProtocol", new WebSocketServerProtocolHandler(brokerProperties.getWsPath(), "mqtt,mqttv3.1,mqttv3.1.1"))
                                 .addLast("websocketToMqtt", new MqttWebsocketCodec())

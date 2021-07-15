@@ -1,5 +1,6 @@
 package github.microgalaxy.mqtt.broker.massage;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.mqtt.MqttQoS;
 
 import java.io.Serializable;
@@ -19,9 +20,9 @@ public final class RetainMassage implements Serializable {
 
     private final MqttQoS qos;
 
-    private final String payload;
+    private final ByteBuf payload;
 
-    public RetainMassage(String topic, MqttQoS qos, String payload) {
+    public RetainMassage(String topic, MqttQoS qos, ByteBuf payload) {
         this.topic = topic;
         this.qos = qos;
         this.payload = payload;
@@ -35,7 +36,7 @@ public final class RetainMassage implements Serializable {
         return qos;
     }
 
-    public String getPayload() {
+    public ByteBuf getPayload() {
         return payload;
     }
 }

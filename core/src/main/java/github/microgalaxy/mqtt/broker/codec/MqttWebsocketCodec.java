@@ -8,7 +8,7 @@ import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import java.util.List;
 
 /**
- * Websocket Mqtt消息编码器
+ * Websocket Mqtt Message Encoder
  *
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */

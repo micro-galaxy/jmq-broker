@@ -31,5 +31,6 @@ public class MqttSubscribe<T extends MqttMessageType, M extends MqttSubscribeMes
     public void onMqttMsg(Channel channel, M msg) {
         List<MqttTopicSubscription> mqttTopicSubscriptions = msg.payload().topicSubscriptions();
 
+
     }
 }

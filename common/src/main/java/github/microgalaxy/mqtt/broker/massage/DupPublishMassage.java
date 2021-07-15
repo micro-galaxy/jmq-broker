@@ -1,5 +1,6 @@
 package github.microgalaxy.mqtt.broker.massage;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.mqtt.MqttQoS;
 
 import java.io.Serializable;
@@ -20,9 +21,9 @@ public final class DupPublishMassage implements Serializable {
 
     private final int massageId;
 
-    private final String payload;
+    private final ByteBuf payload;
 
-    public DupPublishMassage(String clientId, String topic, MqttQoS qos, int massageId, String payload) {
+    public DupPublishMassage(String clientId, String topic, MqttQoS qos, int massageId, ByteBuf payload) {
         this.clientId = clientId;
         this.topic = topic;
         this.qos = qos;
@@ -46,7 +47,7 @@ public final class DupPublishMassage implements Serializable {
         return massageId;
     }
 
-    public String getPayload() {
+    public ByteBuf getPayload() {
         return payload;
     }
 }

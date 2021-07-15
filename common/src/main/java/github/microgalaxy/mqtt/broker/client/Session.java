@@ -19,9 +19,9 @@ public final class Session implements Serializable {
     private final Channel channel;
     private final boolean cleanSession;
     private final MqttPublishMessage willMassage;
-    private final int mqttProtocolVersion;
+    private final MqttVersion mqttProtocolVersion;
 
-    public Session(String clientId, String username, Channel channel, boolean cleanSession, MqttPublishMessage willMassage, int mqttProtocolVersion) {
+    public Session(String clientId, String username, Channel channel, boolean cleanSession, MqttPublishMessage willMassage, MqttVersion mqttProtocolVersion) {
         this.clientId = clientId;
         this.username = username;
         this.channel = channel;
@@ -50,7 +50,7 @@ public final class Session implements Serializable {
         return willMassage;
     }
 
-    public int getMqttProtocolVersion() {
+    public MqttVersion getMqttProtocolVersion() {
         return mqttProtocolVersion;
     }
 }

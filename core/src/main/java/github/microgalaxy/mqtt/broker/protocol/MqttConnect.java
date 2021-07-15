@@ -7,6 +7,8 @@ import github.microgalaxy.mqtt.broker.client.ISubscribeStore;
 import github.microgalaxy.mqtt.broker.client.Session;
 import github.microgalaxy.mqtt.broker.store.IDupPubRelMassage;
 import github.microgalaxy.mqtt.broker.store.IDupPublishMassage;
+import io.netty.buffer.ByteBufUtil;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.*;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -73,85 +75,6 @@ public class MqttConnect<T extends MqttMessageType, M extends MqttConnectMessage
         processDupMsg(channel, msg);
     }
 
-    private void processDupMsg(Channel channel, M msg) {
-        if (msg.variableHeader().isCleanSession())
-            return;
-        dupPublishMassageServer.get(msg.payload().clientIdentifier())
-                .forEach(dupPublishMassage -> {
-                    MqttPublishMessage publishMessage = (MqttPublishMessage) MqttMessageFactory.newMessage(
-                            new MqttFixedHeader(MqttMessageType.PUBLISH, true, dupPublishMassage.getQos(), false, 0),
-                            new MqttPublishVariableHeader(dupPublishMassage.getTopic(), dupPublishMassage.getMassageId()),
-                            dupPublishMassage.getPayload());
-                    channel.writeAndFlush(publishMessage);
-                });
-        dupPubRelMassageServer.get(msg.payload().clientIdentifier())
-                .forEach(dupPubRelMassage -> {
-                    MqttMessage pubRelMassage = MqttMessageFactory.newMessage(
-                            new MqttFixedHeader(MqttMessageType.PUBREL, true, MqttQoS.AT_MOST_ONCE, false, 0),
-                            MqttMessageIdVariableHeader.from(dupPubRelMassage.getMassageId()), null);
-                    channel.writeAndFlush(pubRelMassage);
-                });
-
-    }
-
-    private void heartbeat(Channel channel, M msg) {
-        if (msg.variableHeader().keepAliveTimeSeconds() > 0) {
-            if (channel.pipeline().names().contains("idleStateHandler"))
-                channel.pipeline().remove("idleStateHandler");
-            channel.pipeline().addFirst("idleStateHandler", new IdleStateHandler(0, 0, Math.round(msg.variableHeader().keepAliveTimeSeconds() * 1.5f)));
-        }
-    }
-
-    private void singleLogin(Channel channel, M msg) {
-        String clientId = msg.payload().clientIdentifier();
-        Session previousSession = sessionServer.get(clientId);
-        if (!ObjectUtils.isEmpty(previousSession)) {
-            if (previousSession.isCleanSession()) {
-                sessionServer.remove(clientId);
-                subscribeServer.removeClient(clientId);
-                dupPublishMassageServer.removeClient(clientId);
-                dupPubRelMassageServer.removeClient(clientId);
-            }
-            previousSession.getChannel().close();
-        }
-//TODO will support mqtt v5
-        //遗嘱消息
-        MqttPublishMessage willMessage = null;
-        if (msg.variableHeader().isWillFlag()) {
-            willMessage = (MqttPublishMessage) MqttMessageFactory.newMessage(
-                    new MqttFixedHeader(MqttMessageType.PUBLISH, false, MqttQoS.valueOf(msg.variableHeader().willQos()), msg.variableHeader().isWillRetain(), 0),
-                    new MqttPublishVariableHeader(msg.payload().willTopic(), 0), msg.payload().willMessage());
-        }
-        channel.attr(AttributeKey.valueOf("clientId")).set(msg.payload().clientIdentifier());
-        Session curSession = new Session(clientId, msg.payload().userName(), channel,
-                msg.variableHeader().isCleanSession(), willMessage, msg.variableHeader().version());
-        sessionServer.put(clientId, curSession);
-
-        MqttConnAckMessage connAckMessage = (MqttConnAckMessage) MqttMessageFactory.newMessage(
-                new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_MOST_ONCE, false, 0),
-                new MqttConnAckVariableHeader(MqttConnectReturnCode.CONNECTION_ACCEPTED, msg.variableHeader().isCleanSession()), null);
-        channel.writeAndFlush(connAckMessage);
-        log.info("CONNECT - Client connected: clientId:{}, clearSession:{}", clientId, msg.variableHeader().isCleanSession());
-    }
-
-    private boolean loginAuth(Channel channel, M msg) {
-        MqttVersion mqttVersion = MqttVersion.fromProtocolNameAndLevel(msg.variableHeader().name(),(byte) msg.variableHeader().version());
-        MqttConnectPayload payload = msg.payload();
-        InetSocketAddress socketAddress = (InetSocketAddress) channel.remoteAddress();
-        LoginAuth loginMode = new LoginAuth(payload.clientIdentifier(), payload.userName(), payload.password(),
-                socketAddress.getHostString(), mqttVersion.name(), socketAddress.getPort());
-        boolean authOk = authServer.loginAuth(loginMode);
-        if (!authOk) {
-            if (log.isDebugEnabled())
-                log.debug("Bad username or password:{}", msg.decoderResult().toString());
-            MqttMessageBuilders.ConnAckBuilder connAckMessage = MqttMessageBuilders.connAck().returnCode(MqttVersion.MQTT_5 == mqttVersion ?
-                    MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USERNAME_OR_PASSWORD : MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD)
-            channel.writeAndFlush(connAckMessage);
-            channel.close();
-        }
-        return authOk;
-    }
-
     private boolean validMsgFormat(Channel channel, M msg) {
         boolean enbDebug = log.isDebugEnabled();
         //解码失败
@@ -160,16 +83,18 @@ public class MqttConnect<T extends MqttMessageType, M extends MqttConnectMessage
             if (cause instanceof MqttUnacceptableProtocolVersionException) {
                 if (enbDebug)
                     log.debug("Unsupported versions of the mqtt protocol:{}", msg.decoderResult().toString());
-                MqttMessageBuilders.ConnAckBuilder connAckMessage = MqttMessageBuilders.connAck()
+                MqttConnAckMessage connAckMessage = MqttMessageBuilders.connAck()
                         .returnCode(MqttConnectReturnCode.CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION)
-                        .sessionPresent(false);
+                        .sessionPresent(false)
+                        .build();
                 channel.writeAndFlush(connAckMessage);
             } else if (cause instanceof MqttIdentifierRejectedException) {
                 if (enbDebug)
                     log.debug("Request contains an invalid client identifier:{}", msg.decoderResult().toString());
-                MqttMessageBuilders.ConnAckBuilder connAckMessage = MqttMessageBuilders.connAck()
+                MqttConnAckMessage connAckMessage = MqttMessageBuilders.connAck()
                         .returnCode(MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED)
-                        .sessionPresent(false);
+                        .sessionPresent(false)
+                        .build();
                 channel.writeAndFlush(connAckMessage);
             }
             channel.close();
@@ -179,15 +104,109 @@ public class MqttConnect<T extends MqttMessageType, M extends MqttConnectMessage
             if (enbDebug)
                 log.debug("Request contains an invalid client identifier:{}", msg.decoderResult().toString());
             MqttVersion mqttVersion = MqttVersion.fromProtocolNameAndLevel(msg.variableHeader().name(), (byte) msg.variableHeader().version());
-            MqttMessageBuilders.ConnAckBuilder connAckMessage = MqttMessageBuilders.connAck()
+            MqttConnAckMessage connAckMessage = MqttMessageBuilders.connAck()
                     .returnCode(MqttVersion.MQTT_5 == mqttVersion ? MqttConnectReturnCode.CONNECTION_REFUSED_CLIENT_IDENTIFIER_NOT_VALID
                             : MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED)
-                    .sessionPresent(false);
+                    .sessionPresent(false)
+                    .build();
             channel.writeAndFlush(connAckMessage);
             channel.close();
             return false;
         }
         return true;
+    }
+
+
+    private boolean loginAuth(Channel channel, M msg) {
+        MqttVersion mqttVersion = MqttVersion.fromProtocolNameAndLevel(msg.variableHeader().name(), (byte) msg.variableHeader().version());
+        MqttConnectPayload payload = msg.payload();
+        InetSocketAddress socketAddress = (InetSocketAddress) channel.remoteAddress();
+        LoginAuth loginMode = new LoginAuth(payload.clientIdentifier(), payload.userName(), payload.password(),
+                socketAddress.getHostString(), mqttVersion.name(), socketAddress.getPort());
+        boolean authOk = authServer.loginAuth(loginMode);
+        if (!authOk) {
+            if (log.isDebugEnabled())
+                log.debug("Bad username or password:{}", msg.decoderResult().toString());
+            MqttConnAckMessage connAckMessage = MqttMessageBuilders.connAck()
+                    .returnCode(MqttVersion.MQTT_5 == mqttVersion ?
+                            MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USERNAME_OR_PASSWORD : MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD)
+                    .sessionPresent(false)
+                    .build();
+            channel.writeAndFlush(connAckMessage);
+            channel.close();
+        }
+        return authOk;
+    }
+
+    private void singleLogin(Channel channel, M msg) {
+        MqttVersion mqttVersion = MqttVersion.fromProtocolNameAndLevel(msg.variableHeader().name(), (byte) msg.variableHeader().version());
+        String clientId = msg.payload().clientIdentifier();
+        Session previousSession = sessionServer.get(clientId);
+        if (!ObjectUtils.isEmpty(previousSession)) {
+            if (previousSession.isCleanSession()) {
+                sessionServer.remove(clientId);
+                subscribeServer.removeClient(clientId);
+                dupPublishMassageServer.removeClient(clientId);
+                dupPubRelMassageServer.removeClient(clientId);
+            }
+            MqttConnAckMessage connAckMessage = MqttMessageBuilders.connAck()
+                    .returnCode(mqttVersion == MqttVersion.MQTT_5 ?
+                            MqttConnectReturnCode.CONNECTION_REFUSED_CLIENT_IDENTIFIER_NOT_VALID : MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED)
+                    .sessionPresent(false)
+                    .build();
+            previousSession.getChannel().writeAndFlush(connAckMessage);
+            previousSession.getChannel().close();
+        }
+        //will message
+        MqttPublishMessage willMessage = null;
+        if (msg.variableHeader().isWillFlag()) {
+            willMessage = MqttMessageBuilders.publish().topicName(msg.payload().willTopic())
+                    .messageId(0)
+                    .qos(MqttQoS.valueOf(msg.variableHeader().willQos()))
+                    .payload(Unpooled.buffer().writeBytes(msg.payload().willMessageInBytes()))
+                    .retained(msg.variableHeader().isWillRetain())
+                    .build();
+        }
+        channel.attr(AttributeKey.valueOf("clientId")).set(msg.payload().clientIdentifier());
+        Session curSession = new Session(clientId, msg.payload().userName(), channel,
+                msg.variableHeader().isCleanSession(), willMessage, mqttVersion);
+        sessionServer.put(clientId, curSession);
+
+        MqttConnAckMessage connAckMessage = MqttMessageBuilders.connAck().returnCode(MqttConnectReturnCode.CONNECTION_ACCEPTED)
+                .sessionPresent(!msg.variableHeader().isCleanSession())
+                .build();
+        channel.writeAndFlush(connAckMessage);
+        log.info("CONNECT - Client connected: clientId:{}, clearSession:{}", clientId, msg.variableHeader().isCleanSession());
+    }
+
+
+    private void heartbeat(Channel channel, M msg) {
+        if (msg.variableHeader().keepAliveTimeSeconds() > 0) {
+            if (channel.pipeline().names().contains("idleStateHandler"))
+                channel.pipeline().remove("idleStateHandler");
+            channel.pipeline().addFirst("idleStateHandler", new IdleStateHandler(0, 0, Math.round(msg.variableHeader().keepAliveTimeSeconds() * 1.5f)));
+        }
+    }
+
+
+    private void processDupMsg(Channel channel, M msg) {
+        if (msg.variableHeader().isCleanSession())
+            return;
+        dupPublishMassageServer.get(msg.payload().clientIdentifier())
+                .forEach(m -> {
+                    MqttPublishMessage publishMessage = (MqttPublishMessage) MqttMessageFactory.newMessage(
+                            new MqttFixedHeader(MqttMessageType.PUBLISH, true, m.getQos(), false, 0),
+                            new MqttPublishVariableHeader(m.getTopic(), m.getMassageId()), m.getPayload());
+                    channel.writeAndFlush(publishMessage);
+                });
+        dupPubRelMassageServer.get(msg.payload().clientIdentifier())
+                .forEach(m -> {
+                    MqttMessage pubRelMassage = MqttMessageFactory.newMessage(
+                            new MqttFixedHeader(MqttMessageType.PUBREL, true, MqttQoS.AT_MOST_ONCE, false, 0),
+                            MqttMessageIdVariableHeader.from(m.getMassageId()), null);
+                    channel.writeAndFlush(pubRelMassage);
+                });
+
     }
 
 }
