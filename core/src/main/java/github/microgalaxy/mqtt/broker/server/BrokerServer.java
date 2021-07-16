@@ -59,9 +59,9 @@ public class BrokerServer {
         businessGroup = brokerProperties.isUseEpoll() ? new EpollEventLoopGroup() : new NioEventLoopGroup();
         mqttServer();
         websocketServer();
+        shutdownHook();
         LOGGER.info("MQTT Broker is running. Mqtt port:{}, Websocket port:{}", brokerProperties.getMqttPort(), brokerProperties.getMqttWsPort());
     }
-
 
     private void mqttServer() throws Exception {
         ServerBootstrap server = new ServerBootstrap();
@@ -115,6 +115,16 @@ public class BrokerServer {
                 .childOption(ChannelOption.SO_KEEPALIVE, brokerProperties.isSoKeepAlive())
                 .childOption(ChannelOption.TCP_NODELAY, brokerProperties.isTcpNoDelay());
         websocketChannel = server.bind(brokerProperties.getMqttWsPort()).sync().channel();
+    }
 
+    private void shutdownHook() {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            LOGGER.info("MQTT Broker is shutdown...");
+            bossGroup.shutdownGracefully();
+            businessGroup.shutdownGracefully();
+            workerGroup.shutdownGracefully();
+            mqttChannel.close();
+            websocketChannel.close();
+        }));
     }
 }

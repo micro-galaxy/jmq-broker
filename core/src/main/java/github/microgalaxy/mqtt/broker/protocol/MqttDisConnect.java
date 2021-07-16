@@ -9,6 +9,7 @@ import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageBuilders;
 import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttVersion;
 import io.netty.util.AttributeKey;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -48,12 +49,16 @@ public class MqttDisConnect<T extends MqttMessageType, M extends MqttMessage> ex
     public void onMqttMsg(Channel channel, M msg) {
         String clientId = (String) channel.attr(AttributeKey.valueOf("clientId")).get();
         Session session = sessionServer.get(clientId);
-        if(session.isCleanSession()){
+        if (session.isCleanSession()) {
             subscribeServer.removeClient(clientId);
             dupPublishMassageServer.removeClient(clientId);
             dupPubRelMassageServer.removeClient(clientId);
         }
         sessionServer.remove(clientId);
+        if (session.getMqttProtocolVersion().protocolLevel() >= MqttVersion.MQTT_5.protocolLevel()) {
+            MqttMessage disconnectAckMessage = MqttMessageBuilders.disconnect().build();
+            channel.writeAndFlush(disconnectAckMessage);
+        }
         channel.close();
         log.info("DISCONNECT - Client disconnected: clientId:{}, clearSession:{}", clientId, session.isCleanSession());
     }

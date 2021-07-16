@@ -28,7 +28,8 @@ public abstract class TopicUtils {
         }
         //valid share topic
         if (StringUtils.startsWithIgnoreCase(topicName, "$") &&
-                !StringUtils.startsWithIgnoreCase(topicName, BrokerConstant.ShareSubscribe.SUBSCRIBE_SHARE_PREFIX))
+                !StringUtils.startsWithIgnoreCase(topicName,
+                        BrokerConstant.ShareSubscribe.SUBSCRIBE_SHARE_PREFIX + BrokerConstant.ShareSubscribe.SUBSCRIBE_TIER_SPLIT))
             return false;
         //valid one tier matching
         if (topicName.contains(BrokerConstant.ShareSubscribe.SUBSCRIBE_ONE_TIER)) {
