@@ -3,9 +3,8 @@ package github.microgalaxy.mqtt.broker.config;
 /**
  * @author Microgalaxy
  */
-public enum  BrokerConstant {
-    ;
-    public static final class ShareSubscribe{
+public abstract class BrokerConstant {
+    public abstract static class ShareSubscribe {
         public static final String SUBSCRIBE_SHARE_PREFIX = "$share";
 
         public static final String SUBSCRIBE_TIER_SPLIT = "/";
