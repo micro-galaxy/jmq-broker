@@ -1,5 +1,7 @@
 package github.microgalaxy.mqtt.broker.client;
 
+import io.netty.handler.codec.mqtt.MqttQoS;
+
 import java.io.Serializable;
 
 /**
@@ -7,16 +9,16 @@ import java.io.Serializable;
  *
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
-final class Subscribe implements Serializable {
+public final class Subscribe implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private final String clientId;
 
     private final String topic;
 
-    private final int qos;
+    private final MqttQoS qos;
 
-    public Subscribe(String clientId, String topic, int qos) {
+    public Subscribe(String clientId, String topic, MqttQoS qos) {
         this.clientId = clientId;
         this.topic = topic;
         this.qos = qos;
@@ -30,7 +32,7 @@ final class Subscribe implements Serializable {
         return topic;
     }
 
-    public int getQos() {
+    public MqttQoS getQos() {
         return qos;
     }
 }
