@@ -16,17 +16,11 @@ import org.springframework.stereotype.Component;
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
 @Component
-public class MqttPubAck<T extends MqttMessageType, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
+public class MqttPubAck<T extends MessageHandleType.PubAck, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
     @Autowired
     private IMassagePacketId massageIdServer;
     @Autowired
     private IDupPublishMassage dupPublishMassageServer;
-
-    @Override
-    protected T getType() {
-        return (T) T.PUBACK;
-    }
-
     /**
      * 发布回执消息
      *

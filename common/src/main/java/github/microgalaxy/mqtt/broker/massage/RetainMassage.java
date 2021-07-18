@@ -20,9 +20,9 @@ public final class RetainMassage implements Serializable {
 
     private final MqttQoS qos;
 
-    private final ByteBuf payload;
+    private final byte[] payload;
 
-    public RetainMassage(String topic, MqttQoS qos, ByteBuf payload) {
+    public RetainMassage(String topic, MqttQoS qos, byte[] payload) {
         this.topic = topic;
         this.qos = qos;
         this.payload = payload;
@@ -36,7 +36,7 @@ public final class RetainMassage implements Serializable {
         return qos;
     }
 
-    public ByteBuf getPayload() {
+    public byte[] getPayload() {
         return payload;
     }
 }

@@ -7,7 +7,6 @@ import github.microgalaxy.mqtt.broker.client.ISubscribeStore;
 import github.microgalaxy.mqtt.broker.client.Session;
 import github.microgalaxy.mqtt.broker.store.IDupPubRelMassage;
 import github.microgalaxy.mqtt.broker.store.IDupPublishMassage;
-import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.*;
@@ -19,7 +18,6 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 import java.net.InetSocketAddress;
-import java.util.Arrays;
 
 /**
  * 发起连接
@@ -27,7 +25,7 @@ import java.util.Arrays;
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
 @Component
-public class MqttConnect<T extends MqttMessageType, M extends MqttConnectMessage> extends AbstractMqttMsgProtocol<T, M> {
+public class MqttConnect<T extends MessageHandleType.Connect, M extends MqttConnectMessage> extends AbstractMqttMsgProtocol<T, M> {
     @Autowired
     private LoginAuthInterface authServer;
     @Autowired
@@ -38,16 +36,6 @@ public class MqttConnect<T extends MqttMessageType, M extends MqttConnectMessage
     private IDupPublishMassage dupPublishMassageServer;
     @Autowired
     private IDupPubRelMassage dupPubRelMassageServer;
-
-    /**
-     * 获取消息类型
-     *
-     * @return
-     */
-    @Override
-    protected T getType() {
-        return (T) T.CONNECT;
-    }
 
     /**
      * 发起连接消息

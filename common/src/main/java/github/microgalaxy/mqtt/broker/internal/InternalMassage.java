@@ -1,7 +1,8 @@
-package github.microgalaxy.mqtt.broker.massage;
+package github.microgalaxy.mqtt.broker.internal;
 
 
 import io.netty.buffer.ByteBuf;
+import io.netty.handler.codec.mqtt.MqttQoS;
 import org.springframework.lang.Nullable;
 
 import java.io.Serializable;
@@ -19,9 +20,9 @@ public final class InternalMassage implements Serializable {
 
     private String topic;
 
-    private int qos;
+    private MqttQoS qos;
 
-    private ByteBuf payload;
+    private byte[] payload;
 
     private boolean retain;
 
@@ -44,19 +45,19 @@ public final class InternalMassage implements Serializable {
         this.topic = topic;
     }
 
-    public int getQos() {
+    public MqttQoS getQos() {
         return qos;
     }
 
-    public void setQos(int qos) {
+    public void setQos(MqttQoS qos) {
         this.qos = qos;
     }
 
-    public ByteBuf getPayload() {
+    public byte[] getPayload() {
         return payload;
     }
 
-    public void setPayload(ByteBuf payload) {
+    public void setPayload(byte[] payload) {
         this.payload = payload;
     }
 

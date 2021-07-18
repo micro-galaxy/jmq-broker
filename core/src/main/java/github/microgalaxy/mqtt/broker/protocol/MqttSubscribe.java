@@ -10,6 +10,7 @@ import github.microgalaxy.mqtt.broker.massage.RetainMassage;
 import github.microgalaxy.mqtt.broker.nettyex.MqttConnectReturnCodeEx;
 import github.microgalaxy.mqtt.broker.store.IDupRetainMassage;
 import github.microgalaxy.mqtt.broker.util.TopicUtils;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.*;
 import io.netty.util.AttributeKey;
@@ -28,7 +29,7 @@ import java.util.List;
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
 @Component
-public class MqttSubscribe<T extends MqttMessageType, M extends MqttSubscribeMessage> extends AbstractMqttMsgProtocol<T, M> {
+public class MqttSubscribe<T extends MessageHandleType.Subscribe, M extends MqttSubscribeMessage> extends AbstractMqttMsgProtocol<T, M> {
     @Autowired
     private ISessionStore sessionServer;
     @Autowired
@@ -37,11 +38,6 @@ public class MqttSubscribe<T extends MqttMessageType, M extends MqttSubscribeMes
     private IDupRetainMassage retainMassageServer;
     @Autowired
     private IMassagePacketId massagePacketIdServer;
-
-    @Override
-    protected T getType() {
-        return (T) T.SUBSCRIBE;
-    }
 
     /**
      * subscribe topic message
@@ -63,7 +59,7 @@ public class MqttSubscribe<T extends MqttMessageType, M extends MqttSubscribeMes
                 subscribeStoreServer.put(topic.topicName(), subscribe);
                 if (log.isDebugEnabled())
                     log.debug("SUBSCRIBE - Client subscribe message arrives: clientId:{}, topic:{}, qos:{}",
-                            session.getClientId(), topic.topicName(), topic.qualityOfService());
+                            session.getClientId(), topic.topicName(), topic.qualityOfService().value());
             } else {
                 if (session.getMqttProtocolVersion().protocolLevel() < MqttVersion.MQTT_5.protocolLevel()) {
                     MqttMessage disconnectMessage = MqttMessageBuilders.disconnect()
@@ -99,12 +95,12 @@ public class MqttSubscribe<T extends MqttMessageType, M extends MqttSubscribeMes
                     .messageId(messageId)
                     .qos(targetQos)
                     .retained(false)
-                    .payload(m.getPayload())
+                    .payload(Unpooled.buffer().writeBytes(m.getPayload()))
                     .build();
             channel.writeAndFlush(publishMessage);
             if (log.isDebugEnabled())
                 log.debug("PUBLISH - Send retain message: clientId:{}, topic:{}, qos:{}, messageId:{}",
-                        channel.attr(AttributeKey.valueOf("clientId")).get(), m.getTopic(), targetQos, messageId);
+                        channel.attr(AttributeKey.valueOf("clientId")).get(), m.getTopic(), targetQos.value(), messageId);
         });
     }
 }

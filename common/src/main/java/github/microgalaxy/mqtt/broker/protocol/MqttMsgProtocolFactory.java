@@ -17,19 +17,19 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public  class MqttMsgProtocolFactory {
     private static final Logger LOGGER = LoggerFactory.getLogger(MqttMsgProtocolFactory.class);
-    private static final Map<MqttMessageType, IMqttMsgProtocol> MQTT_MSG_PROTOCOL_POOL = new ConcurrentHashMap();
+    private static final Map<String, AbstractMqttMsgProtocol> MQTT_MSG_PROTOCOL_POOL = new ConcurrentHashMap();
 
     private MqttMsgProtocolFactory() {
     }
 
-    static void registerMsgHandle(MqttMessageType type, IMqttMsgProtocol process) {
+    static void registerMsgHandle(String type, AbstractMqttMsgProtocol process) {
         MQTT_MSG_PROTOCOL_POOL.put(type, process);
     }
 
-    public static void processMsg(Channel channel, MqttMessage msg) {
-        IMqttMsgProtocol process = MQTT_MSG_PROTOCOL_POOL.get(msg.fixedHeader().messageType());
+    public static void processMsg(Channel channel, MqttMessage msg)  {
+        AbstractMqttMsgProtocol process = MQTT_MSG_PROTOCOL_POOL.get(msg.fixedHeader().messageType().name().toLowerCase());
         if (!ObjectUtils.isEmpty(process)) {
-            process.onMqttMsg(channel, msg);
+            process.onMqttMsg(channel, process.getMessageType().cast(msg));
         }else {
             LOGGER.warn("The Mqtt msg handler not implemented,msg:{}",msg.toString());
         }

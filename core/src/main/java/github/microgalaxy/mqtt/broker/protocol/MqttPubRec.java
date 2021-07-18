@@ -15,16 +15,11 @@ import org.springframework.stereotype.Component;
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
 @Component
-public class MqttPubRec<T extends MqttMessageType, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
+public class MqttPubRec<T extends MessageHandleType.PubRec, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
     @Autowired
     private IDupPublishMassage dupPublishMassageServer;
     @Autowired
     private IDupPubRelMassage dupPubRelMassageServer;
-
-    @Override
-    protected T getType() {
-        return (T) T.PUBREC;
-    }
 
     /**
      * QoS2消息回执消息

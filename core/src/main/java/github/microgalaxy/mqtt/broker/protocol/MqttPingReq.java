@@ -11,17 +11,8 @@ import org.springframework.stereotype.Component;
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
 @Component
-public class MqttPingReq<T extends MqttMessageType, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
+public class MqttPingReq<T extends MessageHandleType.PingReq, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
 
-    /**
-     * 获取消息类型
-     *
-     * @return
-     */
-    @Override
-    protected T getType() {
-        return (T) T.PINGREQ;
-    }
 
     /**
      * PING请求消息

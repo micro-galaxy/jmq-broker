@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
 @Component
-public class MqttDisConnect<T extends MqttMessageType, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
+public class MqttDisConnect<T extends MessageHandleType.Disconnect, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
     @Autowired
     private ISessionStore sessionServer;
     @Autowired
@@ -29,16 +29,6 @@ public class MqttDisConnect<T extends MqttMessageType, M extends MqttMessage> ex
     private IDupPublishMassage dupPublishMassageServer;
     @Autowired
     private IDupPubRelMassage dupPubRelMassageServer;
-
-    /**
-     * 获取消息类型
-     *
-     * @return
-     */
-    @Override
-    protected T getType() {
-        return (T) T.DISCONNECT;
-    }
 
     /**
      * 断开连接消息

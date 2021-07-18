@@ -18,14 +18,9 @@ import java.util.List;
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
 @Component
-public class MqttUnSubscribe<T extends MqttMessageType, M extends MqttUnsubscribeMessage> extends AbstractMqttMsgProtocol<T, M> {
+public class MqttUnSubscribe<T extends MessageHandleType.Unsubscribe, M extends MqttUnsubscribeMessage> extends AbstractMqttMsgProtocol<T, M> {
     @Autowired
     private ISubscribeStore subscribeStoreServer;
-
-    @Override
-    protected T getType() {
-        return (T) T.UNSUBSCRIBE;
-    }
 
     /**
      * unsubscribe message

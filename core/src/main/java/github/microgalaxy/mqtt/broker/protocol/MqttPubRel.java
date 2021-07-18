@@ -11,12 +11,7 @@ import org.springframework.stereotype.Component;
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
 @Component
-public class MqttPubRel<T extends MqttMessageType, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
-
-    @Override
-    protected T getType() {
-        return (T) T.PUBREL;
-    }
+public class MqttPubRel<T extends MessageHandleType.PubRel, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
 
     /**
      * QoS2消息释放消息

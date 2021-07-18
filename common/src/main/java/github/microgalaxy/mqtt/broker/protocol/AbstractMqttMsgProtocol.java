@@ -1,36 +1,51 @@
 package github.microgalaxy.mqtt.broker.protocol;
 
 import io.netty.handler.codec.mqtt.MqttMessage;
-import io.netty.handler.codec.mqtt.MqttMessageType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * mqtt消息协议接口
  *
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
-public abstract class AbstractMqttMsgProtocol<T extends MqttMessageType, M extends MqttMessage> implements IMqttMsgProtocol<M> {
+public abstract class AbstractMqttMsgProtocol<T, M extends MqttMessage> implements IMqttMsgProtocol<M> {
     protected final Logger log = LoggerFactory.getLogger(this.getClass());
 
-    /**
-     * 获取消息类型
-     *
-     * @return
-     */
-    protected abstract T getType();
+    public Class<?> getMessageType(){
+        Optional<? extends Class<?>> optional = Arrays.stream(getClass().getMethods())
+                .filter(method -> method.getName().equals(IMqttMsgProtocol.class.getMethods()[0].getName()))
+                .filter(method -> Arrays.stream(method.getParameterTypes()).noneMatch(type -> type.getName().equals(Object.class.getName())))
+                .map(method -> method.getParameterTypes()[0])
+                .findFirst();
+        return optional.isPresent() ? optional.get() : Object.class;
+    }
 
-    /**
-     * constructor
-     *
-     * @return
-     */
     @PostConstruct
-    void registerMsgHandle() {
-        MqttMsgProtocolFactory.registerMsgHandle(getType(), this);
+    private void registerMsgHandle() {
+        MqttMsgProtocolFactory.registerMsgHandle(getMsgType(), getBean());
     }
 
 
+    private String getMsgType() {
+        return getGenericClass(getClass(), 0).getSimpleName().toLowerCase();
+    }
+
+    private AbstractMqttMsgProtocol getBean() {
+        return null;
+    }
+
+
+    private Class<?> getGenericClass(Class<?> clazz, int genericIndex) {
+        Type genericSuperclass = clazz.getGenericSuperclass();
+        if (!(genericSuperclass instanceof ParameterizedType))
+            throw new IllegalArgumentException("GenericSuperclass type error !");
+        return (Class<?>) ((ParameterizedType) genericSuperclass).getActualTypeArguments()[genericIndex];
+    }
 }
