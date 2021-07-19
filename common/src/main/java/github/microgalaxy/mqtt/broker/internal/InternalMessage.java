@@ -12,7 +12,7 @@ import java.io.Serializable;
  *
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
-public final class InternalMassage implements Serializable {
+public final class InternalMessage implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Nullable

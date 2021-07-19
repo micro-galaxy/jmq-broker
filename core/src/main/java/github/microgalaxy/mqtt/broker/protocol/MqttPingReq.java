@@ -23,10 +23,10 @@ public class MqttPingReq<T extends MessageHandleType.PingReq, M extends MqttMess
     public void onMqttMsg(Channel channel, M msg) {
         if(log.isDebugEnabled())
             log.debug("PINGREQ - Ping request arrives: clientId:{}",channel.attr(AttributeKey.valueOf("clientId")).get());
-        MqttMessage pingRespMassage =  MqttMessageFactory.newMessage(
+        MqttMessage pingRespMessage =  MqttMessageFactory.newMessage(
                 new MqttFixedHeader(MqttMessageType.PINGRESP, false, MqttQoS.AT_MOST_ONCE, false, 0),
                 null, null);
-        channel.writeAndFlush(pingRespMassage);
+        channel.writeAndFlush(pingRespMessage);
     }
 
 }

@@ -4,21 +4,17 @@ import github.microgalaxy.mqtt.broker.client.ISessionStore;
 import github.microgalaxy.mqtt.broker.client.ISubscribeStore;
 import github.microgalaxy.mqtt.broker.client.Session;
 import github.microgalaxy.mqtt.broker.client.Subscribe;
-import github.microgalaxy.mqtt.broker.config.BrokerConstant;
-import github.microgalaxy.mqtt.broker.massage.IMassagePacketId;
-import github.microgalaxy.mqtt.broker.massage.RetainMassage;
+import github.microgalaxy.mqtt.broker.message.IMessagePacketId;
+import github.microgalaxy.mqtt.broker.message.RetainMessage;
 import github.microgalaxy.mqtt.broker.nettyex.MqttConnectReturnCodeEx;
-import github.microgalaxy.mqtt.broker.store.IDupRetainMassage;
+import github.microgalaxy.mqtt.broker.message.IDupRetainMessage;
 import github.microgalaxy.mqtt.broker.util.TopicUtils;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.*;
 import io.netty.util.AttributeKey;
-import io.netty.util.internal.StringUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,9 +31,9 @@ public class MqttSubscribe<T extends MessageHandleType.Subscribe, M extends Mqtt
     @Autowired
     private ISubscribeStore subscribeStoreServer;
     @Autowired
-    private IDupRetainMassage retainMassageServer;
+    private IDupRetainMessage retainMessageServer;
     @Autowired
-    private IMassagePacketId massagePacketIdServer;
+    private IMessagePacketId messagePacketIdServer;
 
     /**
      * subscribe topic message
@@ -86,10 +82,10 @@ public class MqttSubscribe<T extends MessageHandleType.Subscribe, M extends Mqtt
 
 
     private void sendRetainMessage(Channel channel, String topicName, MqttQoS qos) {
-        List<RetainMassage> retainMassages = retainMassageServer.match(topicName);
-        retainMassages.forEach(m -> {
+        List<RetainMessage> retainMessages = retainMessageServer.match(topicName);
+        retainMessages.forEach(m -> {
             MqttQoS targetQos = MqttQoS.valueOf(Math.min(m.getQos().value(), qos.value()));
-            int messageId = MqttQoS.AT_MOST_ONCE == targetQos ? 0 : massagePacketIdServer.nextMassageId();
+            int messageId = MqttQoS.AT_MOST_ONCE == targetQos ? 0 : messagePacketIdServer.nextMessageId();
             MqttPublishMessage publishMessage = MqttMessageBuilders.publish()
                     .topicName(m.getTopic())
                     .messageId(messageId)

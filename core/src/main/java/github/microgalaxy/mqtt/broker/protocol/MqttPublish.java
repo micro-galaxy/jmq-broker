@@ -4,20 +4,17 @@ import github.microgalaxy.mqtt.broker.client.ISessionStore;
 import github.microgalaxy.mqtt.broker.client.ISubscribeStore;
 import github.microgalaxy.mqtt.broker.client.Session;
 import github.microgalaxy.mqtt.broker.client.Subscribe;
-import github.microgalaxy.mqtt.broker.massage.DupPublishMassage;
-import github.microgalaxy.mqtt.broker.massage.IMassagePacketId;
-import github.microgalaxy.mqtt.broker.massage.RetainMassage;
-import github.microgalaxy.mqtt.broker.store.IDupPublishMassage;
-import github.microgalaxy.mqtt.broker.store.IDupRetainMassage;
-import io.netty.buffer.Unpooled;
+import github.microgalaxy.mqtt.broker.message.DupPublishMessage;
+import github.microgalaxy.mqtt.broker.message.IMessagePacketId;
+import github.microgalaxy.mqtt.broker.message.RetainMessage;
+import github.microgalaxy.mqtt.broker.message.IDupPublishMessage;
+import github.microgalaxy.mqtt.broker.message.IDupRetainMessage;
 import io.netty.handler.codec.mqtt.MqttQoS;
-import io.netty.buffer.ByteBuf;
 
 import github.microgalaxy.mqtt.broker.internal.IInternalCommunication;
-import github.microgalaxy.mqtt.broker.internal.InternalMassage;
+import github.microgalaxy.mqtt.broker.internal.InternalMessage;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.*;
-import io.netty.util.AttributeKey;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
@@ -34,15 +31,15 @@ public class MqttPublish<T extends MessageHandleType.Publish, M extends MqttPubl
     @Autowired
     private ISessionStore sessionStoreServer;
     @Autowired
-    private IMassagePacketId massagePacketIdServer;
+    private IMessagePacketId messagePacketIdServer;
     @Autowired
     private ISubscribeStore subscribeStoreServer;
     @Autowired
     private IInternalCommunication internalCommunicationServer;
     @Autowired
-    private IDupPublishMassage dupPublishMassageServer;
+    private IDupPublishMessage dupPublishMessageServer;
     @Autowired
-    private IDupRetainMassage dupRetainMassageServer;
+    private IDupRetainMessage dupRetainMessageServer;
 
     /**
      * 发布消息
@@ -63,13 +60,13 @@ public class MqttPublish<T extends MessageHandleType.Publish, M extends MqttPubl
                 .payload(msg.payload())
                 .retained(false)
                 .build();
-        InternalMassage internalMassage = new InternalMassage();
-        internalMassage.setTopic(publishMessage.variableHeader().topicName());
-        internalMassage.setQos(publishMessage.fixedHeader().qosLevel());
-        internalMassage.setPayload(messageBytes);
-        internalMassage.setRetain(false);
-        internalMassage.setDup(false);
-        internalCommunicationServer.sendInternalMassage(internalMassage);
+        InternalMessage internalMessage = new InternalMessage();
+        internalMessage.setTopic(publishMessage.variableHeader().topicName());
+        internalMessage.setQos(publishMessage.fixedHeader().qosLevel());
+        internalMessage.setPayload(messageBytes);
+        internalMessage.setRetain(false);
+        internalMessage.setDup(false);
+        internalCommunicationServer.sendInternalMessage(internalMessage);
         sendPublishMessage(publishMessage, true);
         if (MqttQoS.AT_LEAST_ONCE == mqttQoS) {
             sendPubAckMessage(channel, msg.variableHeader().packetId());
@@ -80,10 +77,10 @@ public class MqttPublish<T extends MessageHandleType.Publish, M extends MqttPubl
 
         if (msg.fixedHeader().isRetain()) {
             if (messageBytes.length == 0) {
-                dupRetainMassageServer.remove(topic);
+                dupRetainMessageServer.remove(topic);
             } else {
-                RetainMassage retainMassage = new RetainMassage(topic, mqttQoS, messageBytes);
-                dupRetainMassageServer.put(topic, retainMassage);
+                RetainMessage retainMessage = new RetainMessage(topic, mqttQoS, messageBytes);
+                dupRetainMessageServer.put(topic, retainMessage);
             }
         }
     }
@@ -109,7 +106,7 @@ public class MqttPublish<T extends MessageHandleType.Publish, M extends MqttPubl
             Session session = sessionStoreServer.get(s.getClientId());
             if (ObjectUtils.isEmpty(session)) return;
 
-            int messageId = massagePacketIdServer.nextMassageId();
+            int messageId = messagePacketIdServer.nextMessageId();
             MqttQoS targetQos = MqttQoS.valueOf(Math.min(s.getQos().value(), publishMessage.fixedHeader().qosLevel().value()));
             MqttPublishMessage message = MqttMessageBuilders.publish()
                     .topicName(publishMessage.variableHeader().topicName())
@@ -121,8 +118,8 @@ public class MqttPublish<T extends MessageHandleType.Publish, M extends MqttPubl
             if (targetQos.value() > MqttQoS.AT_MOST_ONCE.value() && needDup) {
                 byte[] messageBytes = new byte[publishMessage.payload().readableBytes()];
                 publishMessage.payload().getBytes(publishMessage.payload().readableBytes(), messageBytes);
-                DupPublishMassage dupPublishMassage = new DupPublishMassage(s.getClientId(), s.getTopic(), targetQos, messageId, messageBytes);
-                dupPublishMassageServer.put(s.getClientId(), dupPublishMassage);
+                DupPublishMessage dupPublishMessage = new DupPublishMessage(s.getClientId(), s.getTopic(), targetQos, messageId, messageBytes);
+                dupPublishMessageServer.put(s.getClientId(), dupPublishMessage);
             }
             session.getChannel().writeAndFlush(message);
             if (log.isDebugEnabled())

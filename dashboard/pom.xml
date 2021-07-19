@@ -5,8 +5,9 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <artifactId>github.micro-galaxy.mqtt.broker</artifactId>
-        <groupId>jmq-broker</groupId>
-        <version>1.0</version>
+        <groupId>github.micro-galaxy</groupId>
+        <version>${jmq-broker.version}</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
 

@@ -1,6 +1,4 @@
-package github.microgalaxy.mqtt.broker.store;
-
-import github.microgalaxy.mqtt.broker.massage.RetainMassage;
+package github.microgalaxy.mqtt.broker.message;
 
 import java.util.List;
 
@@ -9,14 +7,14 @@ import java.util.List;
  *
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
-public interface IDupRetainMassage {
+public interface IDupRetainMessage {
     /**
      * 消息存储
      *
      * @param topic
-     * @param retainMassage
+     * @param retainMessage
      */
-    void put(String topic, RetainMassage retainMassage);
+    void put(String topic, RetainMessage retainMessage);
 
     /**
      * 获取消息
@@ -24,7 +22,7 @@ public interface IDupRetainMassage {
      * @param topic
      * @return
      */
-    RetainMassage get(String topic);
+    RetainMessage get(String topic);
 
     /**
      * 获取消息集合
@@ -32,7 +30,7 @@ public interface IDupRetainMassage {
      * @param topicFilter
      * @return
      */
-    List<RetainMassage> match(String topicFilter);
+    List<RetainMessage> match(String topicFilter);
 
     /**
      * 移除指定消息

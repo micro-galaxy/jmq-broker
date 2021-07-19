@@ -1,8 +1,8 @@
 package github.microgalaxy.mqtt.broker.protocol;
 
-import github.microgalaxy.mqtt.broker.massage.DupPubRelMassage;
-import github.microgalaxy.mqtt.broker.store.IDupPubRelMassage;
-import github.microgalaxy.mqtt.broker.store.IDupPublishMassage;
+import github.microgalaxy.mqtt.broker.message.DupPubRelMessage;
+import github.microgalaxy.mqtt.broker.message.IDupPubRelMessage;
+import github.microgalaxy.mqtt.broker.message.IDupPublishMessage;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.*;
 import io.netty.util.AttributeKey;
@@ -17,9 +17,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class MqttPubRec<T extends MessageHandleType.PubRec, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
     @Autowired
-    private IDupPublishMassage dupPublishMassageServer;
+    private IDupPublishMessage dupPublishMessageServer;
     @Autowired
-    private IDupPubRelMassage dupPubRelMassageServer;
+    private IDupPubRelMessage dupPubRelMessageServer;
 
     /**
      * QoS2消息回执消息
@@ -33,12 +33,12 @@ public class MqttPubRec<T extends MessageHandleType.PubRec, M extends MqttMessag
         int messageId = ((MqttMessageIdVariableHeader) msg.variableHeader()).messageId();
         if (log.isDebugEnabled())
             log.debug("PUBREC - PubRec request arrives: clientId:{}, messageId:{}",clientId, messageId);
-        dupPublishMassageServer.remove(clientId, messageId);
-        MqttMessage pubRelMassage = MqttMessageFactory.newMessage(
+        dupPublishMessageServer.remove(clientId, messageId);
+        MqttMessage pubRelMessage = MqttMessageFactory.newMessage(
                 new MqttFixedHeader(MqttMessageType.PUBREL, false, MqttQoS.AT_MOST_ONCE, false, 0),
                 MqttMessageIdVariableHeader.from(messageId), null);
-        DupPubRelMassage dupPubRelMassageStore = new DupPubRelMassage(clientId, messageId);
-        dupPubRelMassageServer.put(clientId, dupPubRelMassageStore);
-        channel.writeAndFlush(pubRelMassage);
+        DupPubRelMessage dupPubRelMessageStore = new DupPubRelMessage(clientId, messageId);
+        dupPubRelMessageServer.put(clientId, dupPubRelMessageStore);
+        channel.writeAndFlush(pubRelMessage);
     }
 }

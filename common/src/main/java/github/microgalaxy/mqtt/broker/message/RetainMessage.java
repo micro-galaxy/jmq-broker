@@ -1,6 +1,5 @@
-package github.microgalaxy.mqtt.broker.massage;
+package github.microgalaxy.mqtt.broker.message;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.mqtt.MqttQoS;
 
 import java.io.Serializable;
@@ -13,7 +12,7 @@ import java.io.Serializable;
  *
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
-public final class RetainMassage implements Serializable {
+public final class RetainMessage implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private final String topic;
@@ -22,7 +21,7 @@ public final class RetainMassage implements Serializable {
 
     private final byte[] payload;
 
-    public RetainMassage(String topic, MqttQoS qos, byte[] payload) {
+    public RetainMessage(String topic, MqttQoS qos, byte[] payload) {
         this.topic = topic;
         this.qos = qos;
         this.payload = payload;

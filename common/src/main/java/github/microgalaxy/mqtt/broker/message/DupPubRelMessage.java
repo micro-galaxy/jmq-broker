@@ -1,4 +1,4 @@
-package github.microgalaxy.mqtt.broker.massage;
+package github.microgalaxy.mqtt.broker.message;
 
 import java.io.Serializable;
 
@@ -7,24 +7,24 @@ import java.io.Serializable;
  *
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
-public final class DupPubRelMassage implements Serializable {
+public final class DupPubRelMessage implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private final String clientId;
 
-    private final int massageId;
+    private final int messageId;
 
-    public DupPubRelMassage(String clientId, int massageId) {
+    public DupPubRelMessage(String clientId, int messageId) {
         this.clientId = clientId;
-        this.massageId = massageId;
+        this.messageId = messageId;
     }
 
     public String getClientId() {
         return clientId;
     }
 
-    public int getMassageId() {
-        return massageId;
+    public int getMessageId() {
+        return messageId;
     }
 
 }

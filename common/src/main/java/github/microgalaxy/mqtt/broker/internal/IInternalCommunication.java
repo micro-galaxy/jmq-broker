@@ -7,16 +7,16 @@ package github.microgalaxy.mqtt.broker.internal;
  */
 public interface IInternalCommunication {
     /**
-     * InternalMassage arrives
+     * InternalMessage arrives
      *
-     * @param massage
+     * @param message
      */
-    void onInternalMassage(InternalMassage massage);
+    void onInternalMessage(InternalMessage message);
 
     /**
      * Sending internal broadcast messages
      *
-     * @param massage
+     * @param message
      */
-    void sendInternalMassage(InternalMassage massage);
+    void sendInternalMessage(InternalMessage message);
 }

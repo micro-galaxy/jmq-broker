@@ -5,8 +5,8 @@ import github.microgalaxy.mqtt.broker.auth.LoginAuthInterface;
 import github.microgalaxy.mqtt.broker.client.ISessionStore;
 import github.microgalaxy.mqtt.broker.client.ISubscribeStore;
 import github.microgalaxy.mqtt.broker.client.Session;
-import github.microgalaxy.mqtt.broker.store.IDupPubRelMassage;
-import github.microgalaxy.mqtt.broker.store.IDupPublishMassage;
+import github.microgalaxy.mqtt.broker.message.IDupPubRelMessage;
+import github.microgalaxy.mqtt.broker.message.IDupPublishMessage;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.*;
@@ -33,9 +33,9 @@ public class MqttConnect<T extends MessageHandleType.Connect, M extends MqttConn
     @Autowired
     private ISubscribeStore subscribeServer;
     @Autowired
-    private IDupPublishMassage dupPublishMassageServer;
+    private IDupPublishMessage dupPublishMessageServer;
     @Autowired
-    private IDupPubRelMassage dupPubRelMassageServer;
+    private IDupPubRelMessage dupPubRelMessageServer;
 
     /**
      * 发起连接消息
@@ -134,8 +134,8 @@ public class MqttConnect<T extends MessageHandleType.Connect, M extends MqttConn
             if (previousSession.isCleanSession()) {
                 sessionServer.remove(clientId);
                 subscribeServer.removeClient(clientId);
-                dupPublishMassageServer.removeClient(clientId);
-                dupPubRelMassageServer.removeClient(clientId);
+                dupPublishMessageServer.removeClient(clientId);
+                dupPubRelMessageServer.removeClient(clientId);
             }
             MqttConnAckMessage connAckMessage = MqttMessageBuilders.connAck()
                     .returnCode(mqttVersion == MqttVersion.MQTT_5 ?
@@ -180,19 +180,19 @@ public class MqttConnect<T extends MessageHandleType.Connect, M extends MqttConn
     private void processDupMsg(Channel channel, M msg) {
         if (msg.variableHeader().isCleanSession())
             return;
-        dupPublishMassageServer.get(msg.payload().clientIdentifier())
+        dupPublishMessageServer.get(msg.payload().clientIdentifier())
                 .forEach(m -> {
                     MqttPublishMessage publishMessage = (MqttPublishMessage) MqttMessageFactory.newMessage(
                             new MqttFixedHeader(MqttMessageType.PUBLISH, true, m.getQos(), false, 0),
-                            new MqttPublishVariableHeader(m.getTopic(), m.getMassageId()), m.getPayload());
+                            new MqttPublishVariableHeader(m.getTopic(), m.getMessageId()), m.getPayload());
                     channel.writeAndFlush(publishMessage);
                 });
-        dupPubRelMassageServer.get(msg.payload().clientIdentifier())
+        dupPubRelMessageServer.get(msg.payload().clientIdentifier())
                 .forEach(m -> {
-                    MqttMessage pubRelMassage = MqttMessageFactory.newMessage(
+                    MqttMessage pubRelMessage = MqttMessageFactory.newMessage(
                             new MqttFixedHeader(MqttMessageType.PUBREL, true, MqttQoS.AT_MOST_ONCE, false, 0),
-                            MqttMessageIdVariableHeader.from(m.getMassageId()), null);
-                    channel.writeAndFlush(pubRelMassage);
+                            MqttMessageIdVariableHeader.from(m.getMessageId()), null);
+                    channel.writeAndFlush(pubRelMessage);
                 });
 
     }

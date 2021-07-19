@@ -3,12 +3,11 @@ package github.microgalaxy.mqtt.broker.protocol;
 import github.microgalaxy.mqtt.broker.client.ISessionStore;
 import github.microgalaxy.mqtt.broker.client.ISubscribeStore;
 import github.microgalaxy.mqtt.broker.client.Session;
-import github.microgalaxy.mqtt.broker.store.IDupPubRelMassage;
-import github.microgalaxy.mqtt.broker.store.IDupPublishMassage;
+import github.microgalaxy.mqtt.broker.message.IDupPubRelMessage;
+import github.microgalaxy.mqtt.broker.message.IDupPublishMessage;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageBuilders;
-import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import io.netty.util.AttributeKey;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,9 +25,9 @@ public class MqttDisConnect<T extends MessageHandleType.Disconnect, M extends Mq
     @Autowired
     private ISubscribeStore subscribeServer;
     @Autowired
-    private IDupPublishMassage dupPublishMassageServer;
+    private IDupPublishMessage dupPublishMessageServer;
     @Autowired
-    private IDupPubRelMassage dupPubRelMassageServer;
+    private IDupPubRelMessage dupPubRelMessageServer;
 
     /**
      * 断开连接消息
@@ -41,8 +40,8 @@ public class MqttDisConnect<T extends MessageHandleType.Disconnect, M extends Mq
         Session session = sessionServer.get(clientId);
         if (session.isCleanSession()) {
             subscribeServer.removeClient(clientId);
-            dupPublishMassageServer.removeClient(clientId);
-            dupPubRelMassageServer.removeClient(clientId);
+            dupPublishMessageServer.removeClient(clientId);
+            dupPubRelMessageServer.removeClient(clientId);
         }
         sessionServer.remove(clientId);
         if (session.getMqttProtocolVersion().protocolLevel() >= MqttVersion.MQTT_5.protocolLevel()) {

@@ -1,6 +1,4 @@
-package github.microgalaxy.mqtt.broker.store;
-
-import github.microgalaxy.mqtt.broker.massage.DupPublishMassage;
+package github.microgalaxy.mqtt.broker.message;
 
 import java.util.List;
 
@@ -9,14 +7,14 @@ import java.util.List;
  *
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
-public interface IDupPublishMassage {
+public interface IDupPublishMessage {
     /**
      * 消息存储
      *
      * @param clientId
-     * @param dupPublishMassage
+     * @param dupPublishMessage
      */
-    void put(String clientId, DupPublishMassage dupPublishMassage);
+    void put(String clientId, DupPublishMessage dupPublishMessage);
 
     /**
      * 获取消息集合
@@ -24,15 +22,15 @@ public interface IDupPublishMassage {
      * @param clientId
      * @return
      */
-    List<DupPublishMassage> get(String clientId);
+    List<DupPublishMessage> get(String clientId);
 
     /**
      * 移除指定消息
      *
      * @param clientId
-     * @param massageId
+     * @param messageId
      */
-    void remove(String clientId, int massageId);
+    void remove(String clientId, int messageId);
 
     /**
      * 移除整个客户端消息

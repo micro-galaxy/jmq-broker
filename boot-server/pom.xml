@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+	 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<!--POM-->
+	<parent>
+		<groupId>github.micro-galaxy</groupId>
+		<artifactId>github.micro-galaxy.mqtt.broker</artifactId>
+		<version>${jmq-broker.version}</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+	<!--模块-->
+	<artifactId>boot-server</artifactId>
+	<!--依赖-->
+	<dependencies>
+		<dependency>
+			<groupId>github.micro-galaxy</groupId>
+			<artifactId>core</artifactId>
+			<version>${jmq-broker.version}</version>
+		</dependency>
+	</dependencies>
+	<!--构建-->
+	<build>
+		<!--插件-->
+		<plugins>
+			<!--执行包插件-->
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<version>${spring-boot.version}</version>
+				<configuration>
+					<!--使用devtools时需要配置-->
+					<fork>true</fork>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<!--可以把依赖的包都打包到生成的Jar包中-->
+							<goal>repackage</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+</project>
