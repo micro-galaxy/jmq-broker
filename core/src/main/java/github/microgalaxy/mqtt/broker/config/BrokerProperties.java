@@ -1,6 +1,5 @@
 package github.microgalaxy.mqtt.broker.config;
 
-import io.netty.util.internal.ThreadLocalRandom;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 

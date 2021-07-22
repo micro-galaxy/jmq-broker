@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <!--POM-->
+    <parent>
+        <groupId>github.micro-galaxy</groupId>
+        <artifactId>jmq-broker</artifactId>
+        <version>${jmq-broker.version}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <!--    模块-->
+    <artifactId>starter</artifactId>
+    <dependencies>
+        <dependency>
+            <groupId>github.micro-galaxy</groupId>
+            <artifactId>common</artifactId>
+            <version>${jmq-broker.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>github.micro-galaxy</groupId>
+            <artifactId>core</artifactId>
+            <version>${jmq-broker.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>github.micro-galaxy</groupId>
+            <artifactId>dashboard</artifactId>
+            <version>${jmq-broker.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>github.micro-galaxy</groupId>
+            <artifactId>plugin</artifactId>
+            <version>${jmq-broker.version}</version>
+        </dependency>
+
+
+    </dependencies>
+
+
+    <!--构建-->
+    <build>
+        <!--插件-->
+        <plugins>
+            <!--执行包插件-->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
+                <configuration>
+                    <!--使用devtools时需要配置-->
+                    <fork>true</fork>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <!--可以把依赖的包都打包到生成的Jar包中-->
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

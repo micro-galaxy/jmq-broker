@@ -4,20 +4,18 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-
     <groupId>github.micro-galaxy</groupId>
-    <artifactId>github.micro-galaxy.mqtt.broker</artifactId>
+    <artifactId>jmq-broker</artifactId>
     <version>${jmq-broker.version}</version>
     <packaging>pom</packaging>
     <!--模块-->
     <modules>
-        <module>boot-server</module>
+        <module>starter</module>
         <module>common</module>
         <module>core</module>
         <module>plugin</module>
         <module>dashboard</module>
     </modules>
-
     <!--属性-->
     <properties>
         <jmq-broker.version>1.5</jmq-broker.version>
@@ -85,18 +83,14 @@
             <scope>test</scope>
         </dependency>
 
-
-        <!--spring stater-->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-autoconfigure</artifactId>
-            <version>${spring-boot.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-configuration-processor</artifactId>
-            <version>${spring-boot.version}</version>
-        </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter</artifactId>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-configuration-processor</artifactId>
+            </dependency>
     </dependencies>
     <!--构建-->
     <build>

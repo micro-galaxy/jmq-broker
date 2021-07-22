@@ -1,4 +1,4 @@
-package github.microgalaxy.mqtt.broker;
+package github.microgalaxy.jmqbrokerserver;
 
 import github.microgalaxy.mqtt.broker.server.BrokerServer;
 import org.springframework.boot.SpringApplication;
@@ -10,15 +10,17 @@ import org.springframework.context.annotation.Bean;
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
 @SpringBootApplication(scanBasePackages = "github.microgalaxy.mqtt.broker")
-public class JmqApplication {
+public class JmqBrokerServerApplication {
+
     public static void main(String[] args) {
-        SpringApplication application = new SpringApplication(JmqApplication.class);
+        SpringApplication application = new SpringApplication(JmqBrokerServerApplication.class);
         application.setWebApplicationType(WebApplicationType.NONE);
         application.run(args);
     }
+//
+//    @Bean
+//    public BrokerServer brokerProperties() {
+//        return new BrokerServer();
+//    }
 
-    @Bean
-    public BrokerServer brokerServer(){
-        return new BrokerServer();
-    }
 }
