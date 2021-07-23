@@ -15,6 +15,7 @@ import github.microgalaxy.mqtt.broker.internal.IInternalCommunication;
 import github.microgalaxy.mqtt.broker.internal.InternalMessage;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.*;
+import io.netty.util.AttributeKey;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
@@ -27,7 +28,7 @@ import java.util.List;
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
 @Component
-public class MqttPublish<T extends MessageHandleType.Publish, M extends MqttPublishMessage> extends AbstractMqttMsgProtocol<T, M> {
+public class MqttPublish<T extends MqttMessageType, M extends MqttPublishMessage> extends AbstractMqttMsgProtocol<T, M> {
     @Autowired
     private ISessionStore sessionStoreServer;
     @Autowired
@@ -52,7 +53,7 @@ public class MqttPublish<T extends MessageHandleType.Publish, M extends MqttPubl
         String topic = msg.variableHeader().topicName();
         MqttQoS mqttQoS = msg.fixedHeader().qosLevel();
         byte[] messageBytes = new byte[msg.payload().readableBytes()];
-        msg.payload().getBytes(msg.payload().readableBytes(), messageBytes);
+        msg.payload().getBytes(msg.payload().readerIndex(), messageBytes);
         MqttPublishMessage publishMessage = MqttMessageBuilders.publish()
                 .topicName(topic)
                 .messageId(msg.variableHeader().packetId())
@@ -66,15 +67,15 @@ public class MqttPublish<T extends MessageHandleType.Publish, M extends MqttPubl
         internalMessage.setPayload(messageBytes);
         internalMessage.setRetain(false);
         internalMessage.setDup(false);
-        internalCommunicationServer.sendInternalMessage(internalMessage);
-        sendPublishMessage(publishMessage, true);
+
         if (MqttQoS.AT_LEAST_ONCE == mqttQoS) {
             sendPubAckMessage(channel, msg.variableHeader().packetId());
         }
         if (MqttQoS.EXACTLY_ONCE == mqttQoS) {
             sendPubRecMessage(channel, msg.variableHeader().packetId());
         }
-
+        sendPublishMessage(publishMessage, true);
+        internalCommunicationServer.sendInternalMessage(internalMessage);
         if (msg.fixedHeader().isRetain()) {
             if (messageBytes.length == 0) {
                 dupRetainMessageServer.remove(topic);
@@ -85,12 +86,20 @@ public class MqttPublish<T extends MessageHandleType.Publish, M extends MqttPubl
         }
     }
 
+    @Override
+    public MqttMessageType getHandleType() {
+        return T.PUBLISH;
+    }
+
 
     private void sendPubAckMessage(Channel channel, int packetId) {
         MqttMessage pubAckMessage = MqttMessageBuilders.pubAck()
                 .packetId(packetId)
                 .build();
         channel.writeAndFlush(pubAckMessage);
+        if (log.isDebugEnabled())
+            log.debug("SEND - Send pubAck packet: clientId:{}, messageId:{}",
+                    channel.attr(AttributeKey.valueOf("clientId")).get(), packetId);
     }
 
     private void sendPubRecMessage(Channel channel, int packetId) {
@@ -98,6 +107,9 @@ public class MqttPublish<T extends MessageHandleType.Publish, M extends MqttPubl
                 new MqttFixedHeader(MqttMessageType.PUBREC, false, MqttQoS.AT_MOST_ONCE, false, 0),
                 MqttMessageIdVariableHeader.from(packetId), null);
         channel.writeAndFlush(pubRecMessage);
+        if (log.isDebugEnabled())
+            log.debug("SEND - Send pubRec packet: clientId:{}, messageId:{}",
+                    channel.attr(AttributeKey.valueOf("clientId")).get(), packetId);
     }
 
     public void sendPublishMessage(MqttPublishMessage publishMessage, boolean needDup) {

@@ -6,9 +6,7 @@ import github.microgalaxy.mqtt.broker.client.Session;
 import github.microgalaxy.mqtt.broker.message.IDupPubRelMessage;
 import github.microgalaxy.mqtt.broker.message.IDupPublishMessage;
 import io.netty.channel.Channel;
-import io.netty.handler.codec.mqtt.MqttMessage;
-import io.netty.handler.codec.mqtt.MqttMessageBuilders;
-import io.netty.handler.codec.mqtt.MqttVersion;
+import io.netty.handler.codec.mqtt.*;
 import io.netty.util.AttributeKey;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -19,7 +17,7 @@ import org.springframework.stereotype.Component;
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
 @Component
-public class MqttDisConnect<T extends MessageHandleType.Disconnect, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
+public class MqttDisConnect<T extends MqttMessageType, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
     @Autowired
     private ISessionStore sessionServer;
     @Autowired
@@ -51,5 +49,11 @@ public class MqttDisConnect<T extends MessageHandleType.Disconnect, M extends Mq
         channel.close();
         log.info("DISCONNECT - Client disconnected: clientId:{}, clearSession:{}", clientId, session.isCleanSession());
     }
+
+    @Override
+    public MqttMessageType getHandleType() {
+        return T.DISCONNECT;
+    }
+
 
 }

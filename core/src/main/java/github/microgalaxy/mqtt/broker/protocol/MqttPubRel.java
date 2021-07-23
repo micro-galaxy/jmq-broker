@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
 @Component
-public class MqttPubRel<T extends MessageHandleType.PubRel, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
+public class MqttPubRel<T extends MqttMessageType, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
 
     /**
      * QoS2消息释放消息
@@ -28,5 +28,10 @@ public class MqttPubRel<T extends MessageHandleType.PubRel, M extends MqttMessag
                 MqttMessageIdVariableHeader.from(messageId), null);
         log.debug("PUBREL - PubRel request arrives: clientId:{}, messageId:{}",clientId, messageId);
         channel.writeAndFlush(pubCompMqttMessage);
+    }
+
+    @Override
+    public MqttMessageType getHandleType() {
+        return T.PUBREL;
     }
 }

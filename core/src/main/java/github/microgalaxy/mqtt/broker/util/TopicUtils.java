@@ -23,7 +23,8 @@ public abstract class TopicUtils {
             if (!StringUtils.endsWithIgnoreCase(topicName,
                     BrokerConstant.ShareSubscribe.SUBSCRIBE_TIER_SPLIT + BrokerConstant.ShareSubscribe.SUBSCRIBE_MULTIPLE_TIER))
                 return false;
-            if (topicName.indexOf(BrokerConstant.ShareSubscribe.SUBSCRIBE_MULTIPLE_TIER) > BrokerConstant.ShareSubscribe.SUBSCRIBE_MULTIPLE_TIER.length())
+            if (StringUtils.countOccurrencesOf(topicName, BrokerConstant.ShareSubscribe.SUBSCRIBE_MULTIPLE_TIER) >
+                    BrokerConstant.ShareSubscribe.SUBSCRIBE_MULTIPLE_TIER.length())
                 return false;
         }
         //valid share topic
@@ -33,8 +34,8 @@ public abstract class TopicUtils {
             return false;
         //valid one tier matching
         if (topicName.contains(BrokerConstant.ShareSubscribe.SUBSCRIBE_ONE_TIER)) {
-            if (topicName.indexOf(BrokerConstant.ShareSubscribe.SUBSCRIBE_ONE_TIER) !=
-                    topicName.indexOf(BrokerConstant.ShareSubscribe.SUBSCRIBE_TIER_SPLIT + BrokerConstant.ShareSubscribe.SUBSCRIBE_ONE_TIER))
+            if (StringUtils.countOccurrencesOf(topicName, BrokerConstant.ShareSubscribe.SUBSCRIBE_ONE_TIER) !=
+                    StringUtils.countOccurrencesOf(topicName, BrokerConstant.ShareSubscribe.SUBSCRIBE_TIER_SPLIT + BrokerConstant.ShareSubscribe.SUBSCRIBE_ONE_TIER))
                 return false;
         }
         return true;

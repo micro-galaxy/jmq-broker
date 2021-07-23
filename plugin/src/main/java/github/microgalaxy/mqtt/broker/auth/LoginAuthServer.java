@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 public class LoginAuthServer implements LoginAuthInterface {
     @Override
     public boolean loginAuth(LoginAuth loginAuth) {
+//        throw new RuntimeException("账号密码错误");
         return true;
     }
 }

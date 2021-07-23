@@ -1,10 +1,8 @@
-package github.microgalaxy.jmqbrokerserver;
+package github.microgalaxy.mqtt.broker;
 
-import github.microgalaxy.mqtt.broker.server.BrokerServer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.Bean;
 
 /**
  * @author Microgalaxy（https://github.com/micro-galaxy）
@@ -17,10 +15,5 @@ public class JmqBrokerServerApplication {
         application.setWebApplicationType(WebApplicationType.NONE);
         application.run(args);
     }
-//
-//    @Bean
-//    public BrokerServer brokerProperties() {
-//        return new BrokerServer();
-//    }
 
 }

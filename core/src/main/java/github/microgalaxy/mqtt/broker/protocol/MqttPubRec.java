@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
 @Component
-public class MqttPubRec<T extends MessageHandleType.PubRec, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
+public class MqttPubRec<T extends MqttMessageType, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
     @Autowired
     private IDupPublishMessage dupPublishMessageServer;
     @Autowired
@@ -40,5 +40,10 @@ public class MqttPubRec<T extends MessageHandleType.PubRec, M extends MqttMessag
         DupPubRelMessage dupPubRelMessageStore = new DupPubRelMessage(clientId, messageId);
         dupPubRelMessageServer.put(clientId, dupPubRelMessageStore);
         channel.writeAndFlush(pubRelMessage);
+    }
+
+    @Override
+    public MqttMessageType getHandleType() {
+        return T.PUBREC;
     }
 }

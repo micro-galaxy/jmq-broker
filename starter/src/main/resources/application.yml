@@ -1,0 +1,4 @@
+logging:
+  level:
+    root: info
+    github.microgalaxy.mqtt.broker: debug

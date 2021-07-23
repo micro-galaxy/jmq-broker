@@ -25,7 +25,7 @@ import java.net.InetSocketAddress;
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
 @Component
-public class MqttConnect<T extends MessageHandleType.Connect, M extends MqttConnectMessage> extends AbstractMqttMsgProtocol<T, M> {
+public class MqttConnect<T extends MqttMessageType, M extends MqttConnectMessage> extends AbstractMqttMsgProtocol<T, M> {
     @Autowired
     private LoginAuthInterface authServer;
     @Autowired
@@ -63,6 +63,12 @@ public class MqttConnect<T extends MessageHandleType.Connect, M extends MqttConn
         processDupMsg(channel, msg);
     }
 
+    @Override
+    public MqttMessageType getHandleType() {
+        return T.CONNECT;
+    }
+
+
     private boolean validMsgFormat(Channel channel, M msg) {
         boolean enbDebug = log.isDebugEnabled();
         //解码失败
@@ -86,6 +92,7 @@ public class MqttConnect<T extends MessageHandleType.Connect, M extends MqttConn
                 channel.writeAndFlush(connAckMessage);
             }
             channel.close();
+            log.info("Connect closed,reason: Mqtt packet format error.");
             return false;
         }
         if (StringUtils.isEmpty(msg.payload().clientIdentifier())) {
@@ -99,6 +106,7 @@ public class MqttConnect<T extends MessageHandleType.Connect, M extends MqttConn
                     .build();
             channel.writeAndFlush(connAckMessage);
             channel.close();
+            log.info("Connect closed,reason: Mqtt clientId is empty.");
             return false;
         }
         return true;
@@ -122,6 +130,7 @@ public class MqttConnect<T extends MessageHandleType.Connect, M extends MqttConn
                     .build();
             channel.writeAndFlush(connAckMessage);
             channel.close();
+            log.info("Connect closed,reason: Bad username or password.");
         }
         return authOk;
     }

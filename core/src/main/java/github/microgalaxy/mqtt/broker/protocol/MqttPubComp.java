@@ -5,6 +5,7 @@ import github.microgalaxy.mqtt.broker.message.IDupPubRelMessage;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
+import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.util.AttributeKey;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -15,7 +16,7 @@ import org.springframework.stereotype.Component;
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
 @Component
-public class MqttPubComp<T extends MessageHandleType.PubComp, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
+public class MqttPubComp<T extends MqttMessageType, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
     @Autowired
     private IMessagePacketId messageIdServer;
     @Autowired
@@ -35,5 +36,10 @@ public class MqttPubComp<T extends MessageHandleType.PubComp, M extends MqttMess
         if (log.isDebugEnabled())
             log.debug("PUBCOMP - PubComp request arrives: clientId:{}, messageId:{}",
                     channel.attr(AttributeKey.valueOf("clientId")).get(), messageId);
+    }
+
+    @Override
+    public MqttMessageType getHandleType() {
+        return T.PUBCOMP;
     }
 }

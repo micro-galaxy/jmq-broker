@@ -15,9 +15,11 @@ import io.netty.handler.codec.mqtt.*;
 import io.netty.util.AttributeKey;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * subscribe topic
@@ -25,7 +27,7 @@ import java.util.List;
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
 @Component
-public class MqttSubscribe<T extends MessageHandleType.Subscribe, M extends MqttSubscribeMessage> extends AbstractMqttMsgProtocol<T, M> {
+public class MqttSubscribe<T extends MqttMessageType, M extends MqttSubscribeMessage> extends AbstractMqttMsgProtocol<T, M> {
     @Autowired
     private ISessionStore sessionServer;
     @Autowired
@@ -46,38 +48,31 @@ public class MqttSubscribe<T extends MessageHandleType.Subscribe, M extends Mqtt
     public void onMqttMsg(Channel channel, M msg) {
         Session session = sessionServer.get((String) channel.attr(AttributeKey.valueOf("clientId")).get());
         List<MqttTopicSubscription> subTopics = msg.payload().topicSubscriptions();
-        List<Integer> reasonCodes = new ArrayList<>(subTopics.size());
-        for (MqttTopicSubscription topic : subTopics) {
-            if (TopicUtils.validTopic(topic.topicName())) {
-                if (session.getMqttProtocolVersion().protocolLevel() >= MqttVersion.MQTT_5.protocolLevel())
-                    reasonCodes.add(msg.fixedHeader().qosLevel().value());
-                Subscribe subscribe = new Subscribe(session.getClientId(), topic.topicName(), topic.qualityOfService());
-                subscribeStoreServer.put(topic.topicName(), subscribe);
-                if (log.isDebugEnabled())
-                    log.debug("SUBSCRIBE - Client subscribe message arrives: clientId:{}, topic:{}, qos:{}",
-                            session.getClientId(), topic.topicName(), topic.qualityOfService().value());
-            } else {
-                if (session.getMqttProtocolVersion().protocolLevel() < MqttVersion.MQTT_5.protocolLevel()) {
-                    MqttMessage disconnectMessage = MqttMessageBuilders.disconnect()
-                            .reasonCode((byte) MqttConnectReturnCodeEx.SUBSCRIBE_REFUSED_NOT_SUPPORT_TOPIC.value())
-                            .build();
-                    channel.writeAndFlush(disconnectMessage);
-                    channel.close();
-                    return;
-                }
-                reasonCodes.add(MqttConnectReturnCodeEx.SUBSCRIBE_REFUSED_NOT_SUPPORT_TOPIC.value());
-            }
-        }
-        if (session.getMqttProtocolVersion().protocolLevel() >= MqttVersion.MQTT_5.protocolLevel()) {
-            MqttSubAckMessage subAckMessage = (MqttSubAckMessage) MqttMessageFactory.newMessage(
-                    new MqttFixedHeader(MqttMessageType.SUBACK, false, MqttQoS.AT_MOST_ONCE, false, 0),
-                    MqttMessageIdVariableHeader.from(msg.variableHeader().messageId()),
-                    new MqttSubAckPayload(reasonCodes));
-            channel.writeAndFlush(subAckMessage);
-        }
+        List<Integer> reasonCodes = subTopics.stream()
+                .filter(t -> !TopicUtils.validTopic(t.topicName()))
+                .map(t -> MqttConnectReturnCodeEx.SUBSCRIBE_REFUSED_NOT_SUPPORT_TOPIC.value())
+                .collect(Collectors.toList());
+        MqttSubAckMessage subAckMessage = (MqttSubAckMessage) MqttMessageFactory.newMessage(
+                new MqttFixedHeader(MqttMessageType.SUBACK, false, MqttQoS.AT_MOST_ONCE, false, 0),
+                MqttMessageIdVariableHeader.from(msg.variableHeader().messageId()),
+                new MqttSubAckPayload(reasonCodes));
+        channel.writeAndFlush(subAckMessage);
+        if (!CollectionUtils.isEmpty(reasonCodes)) return;
 
+        //store subscribe
+        subTopics.forEach(t -> {
+            Subscribe subscribe = new Subscribe(session.getClientId(), t.topicName(), t.qualityOfService());
+            subscribeStoreServer.put(t.topicName(), subscribe);
+            if (log.isDebugEnabled())
+                log.debug("SUBSCRIBE - Client subscribe topic: clientId:{}, topic:{}", session.getClientId(), t);
+        });
         //send retain message
         subTopics.forEach(s -> sendRetainMessage(channel, s.topicName(), s.qualityOfService()));
+    }
+
+    @Override
+    public MqttMessageType getHandleType() {
+        return T.SUBSCRIBE;
     }
 
 

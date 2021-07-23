@@ -5,6 +5,7 @@ import github.microgalaxy.mqtt.broker.message.IDupPublishMessage;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
+import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.util.AttributeKey;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -15,7 +16,7 @@ import org.springframework.stereotype.Component;
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
 @Component
-public class MqttPubAck<T extends MessageHandleType.PubAck, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
+public class MqttPubAck<T extends MqttMessageType, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
     @Autowired
     private IMessagePacketId messageIdServer;
     @Autowired
@@ -34,5 +35,11 @@ public class MqttPubAck<T extends MessageHandleType.PubAck, M extends MqttMessag
         if (log.isDebugEnabled())
             log.debug("PUBACK - PubAck request arrives: clientId:{}, messageId:{}",
                     channel.attr(AttributeKey.valueOf("clientId")).get(), messageId);
+    }
+
+
+    @Override
+    public MqttMessageType getHandleType() {
+        return T.PUBACK;
     }
 }

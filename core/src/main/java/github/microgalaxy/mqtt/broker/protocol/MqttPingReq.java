@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
 @Component
-public class MqttPingReq<T extends MessageHandleType.PingReq, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
+public class MqttPingReq<T extends MqttMessageType, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
 
 
     /**
@@ -29,4 +29,8 @@ public class MqttPingReq<T extends MessageHandleType.PingReq, M extends MqttMess
         channel.writeAndFlush(pingRespMessage);
     }
 
+    @Override
+    public MqttMessageType getHandleType() {
+        return T.PINGREQ;
+    }
 }

@@ -18,7 +18,7 @@ import java.util.List;
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
 @Component
-public class MqttUnSubscribe<T extends MessageHandleType.Unsubscribe, M extends MqttUnsubscribeMessage> extends AbstractMqttMsgProtocol<T, M> {
+public class MqttUnSubscribe<T extends MqttMessageType, M extends MqttUnsubscribeMessage> extends AbstractMqttMsgProtocol<T, M> {
     @Autowired
     private ISubscribeStore subscribeStoreServer;
 
@@ -35,11 +35,16 @@ public class MqttUnSubscribe<T extends MessageHandleType.Unsubscribe, M extends 
         topics.forEach(t -> {
             subscribeStoreServer.remove(t, clientId);
             if (log.isDebugEnabled())
-                log.debug("SUBSCRIBE - Client unsubscribe message arrives: clientId:{}, topic:{}", clientId, t);
+                log.debug("UNSUBSCRIBE - Client unsubscribe message arrives: clientId:{}, topic:{}", clientId, t);
         });
         MqttUnsubAckMessage unsubAckMessage = MqttMessageBuilders.unsubAck()
                 .packetId(msg.variableHeader().messageId())
                 .build();
         channel.writeAndFlush(unsubAckMessage);
+    }
+
+    @Override
+    public MqttMessageType getHandleType() {
+        return T.UNSUBSCRIBE;
     }
 }
