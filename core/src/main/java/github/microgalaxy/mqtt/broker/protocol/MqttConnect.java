@@ -5,6 +5,7 @@ import github.microgalaxy.mqtt.broker.auth.LoginAuthInterface;
 import github.microgalaxy.mqtt.broker.client.ISessionStore;
 import github.microgalaxy.mqtt.broker.client.ISubscribeStore;
 import github.microgalaxy.mqtt.broker.client.Session;
+import github.microgalaxy.mqtt.broker.handler.MqttException;
 import github.microgalaxy.mqtt.broker.message.IDupPubRelMessage;
 import github.microgalaxy.mqtt.broker.message.IDupPublishMessage;
 import io.netty.buffer.Unpooled;
@@ -45,16 +46,9 @@ public class MqttConnect<T extends MqttMessageType, M extends MqttConnectMessage
     @Override
     public void onMqttMsg(Channel channel, M msg) {
         //处理编码异常、客户端id异常
-        boolean formatOk = validMsgFormat(channel, msg);
-        if (!formatOk) {
-            return;
-        }
+        validMsgFormat(channel, msg);
         //客户端认证
-        boolean authOk = loginAuth(channel, msg);
-        if (!authOk) {
-            return;
-        }
-
+        loginAuth(channel, msg);
         //登录
         singleLogin(channel, msg);
         //处理心跳消息
@@ -69,70 +63,52 @@ public class MqttConnect<T extends MqttMessageType, M extends MqttConnectMessage
     }
 
 
-    private boolean validMsgFormat(Channel channel, M msg) {
-        boolean enbDebug = log.isDebugEnabled();
-        //解码失败
-        if (msg.decoderResult().isFailure()) {
-            Throwable cause = msg.decoderResult().cause();
-            if (cause instanceof MqttUnacceptableProtocolVersionException) {
-                if (enbDebug)
-                    log.debug("Unsupported versions of the mqtt protocol:{}", msg.decoderResult().toString());
-                MqttConnAckMessage connAckMessage = MqttMessageBuilders.connAck()
-                        .returnCode(MqttConnectReturnCode.CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION)
-                        .sessionPresent(false)
-                        .build();
-                channel.writeAndFlush(connAckMessage);
-            } else if (cause instanceof MqttIdentifierRejectedException) {
-                if (enbDebug)
-                    log.debug("Request contains an invalid client identifier:{}", msg.decoderResult().toString());
-                MqttConnAckMessage connAckMessage = MqttMessageBuilders.connAck()
-                        .returnCode(MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED)
-                        .sessionPresent(false)
-                        .build();
-                channel.writeAndFlush(connAckMessage);
-            }
+    @Override
+    public void onHandlerError(Channel channel, M msg, MqttException ex) {
+        MqttConnAckMessage connAckMessage = MqttMessageBuilders.connAck()
+                .returnCode(MqttConnectReturnCode.valueOf((byte) ex.getReasonCode()))
+                .sessionPresent(false)
+                .build();
+        channel.writeAndFlush(connAckMessage);
+        if (ex.isDisConnect()) {
             channel.close();
-            log.info("Connect closed,reason: Mqtt packet format error.");
-            return false;
+            log.info(ex.getMessage());
         }
-        if (StringUtils.isEmpty(msg.payload().clientIdentifier())) {
-            if (enbDebug)
-                log.debug("Request contains an invalid client identifier:{}", msg.decoderResult().toString());
-            MqttVersion mqttVersion = MqttVersion.fromProtocolNameAndLevel(msg.variableHeader().name(), (byte) msg.variableHeader().version());
-            MqttConnAckMessage connAckMessage = MqttMessageBuilders.connAck()
-                    .returnCode(MqttVersion.MQTT_5 == mqttVersion ? MqttConnectReturnCode.CONNECTION_REFUSED_CLIENT_IDENTIFIER_NOT_VALID
-                            : MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED)
-                    .sessionPresent(false)
-                    .build();
-            channel.writeAndFlush(connAckMessage);
-            channel.close();
-            log.info("Connect closed,reason: Mqtt clientId is empty.");
-            return false;
-        }
-        return true;
     }
 
+    private void validMsgFormat(Channel channel, M msg) {
+        //decode fail
+        if (msg.decoderResult().isFailure()) {
+            Throwable cause = msg.decoderResult().cause();
+            int reasonCode = MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE.byteValue();
+            if (cause instanceof MqttUnacceptableProtocolVersionException) {
+                reasonCode = MqttConnectReturnCode.CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION.byteValue();
+            } else if (cause instanceof MqttIdentifierRejectedException) {
+                reasonCode = MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED.byteValue();
+            }
+            throw new MqttException(reasonCode, true, "Connect closed,reason: Mqtt packet format error");
+        }
+        if (StringUtils.isEmpty(msg.payload().clientIdentifier())) {
+            MqttVersion mqttVersion = MqttVersion.fromProtocolNameAndLevel(msg.variableHeader().name(), (byte) msg.variableHeader().version());
+            MqttConnectReturnCode reasonCode = MqttVersion.MQTT_5 == mqttVersion ? MqttConnectReturnCode.CONNECTION_REFUSED_CLIENT_IDENTIFIER_NOT_VALID
+                    : MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED;
+            throw new MqttException((int) reasonCode.byteValue(), true, "Connect closed,reason: Mqtt clientId is empty");
+        }
+    }
 
-    private boolean loginAuth(Channel channel, M msg) {
+    private void loginAuth(Channel channel, M msg) {
         MqttVersion mqttVersion = MqttVersion.fromProtocolNameAndLevel(msg.variableHeader().name(), (byte) msg.variableHeader().version());
         MqttConnectPayload payload = msg.payload();
         InetSocketAddress socketAddress = (InetSocketAddress) channel.remoteAddress();
         LoginAuth loginMode = new LoginAuth(payload.clientIdentifier(), payload.userName(), payload.password(),
                 socketAddress.getHostString(), mqttVersion.name(), socketAddress.getPort());
         boolean authOk = authServer.loginAuth(loginMode);
-        if (!authOk) {
-            if (log.isDebugEnabled())
-                log.debug("Bad username or password:{}", msg.decoderResult().toString());
-            MqttConnAckMessage connAckMessage = MqttMessageBuilders.connAck()
-                    .returnCode(MqttVersion.MQTT_5 == mqttVersion ?
-                            MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USERNAME_OR_PASSWORD : MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD)
-                    .sessionPresent(false)
-                    .build();
-            channel.writeAndFlush(connAckMessage);
-            channel.close();
-            log.info("Connect closed,reason: Bad username or password.");
-        }
-        return authOk;
+        if (!authOk)
+            throw new MqttException(MqttVersion.MQTT_5 == mqttVersion ?
+                    (int) MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USERNAME_OR_PASSWORD.byteValue() :
+                    (int) MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD.byteValue(),
+                    true, "Connect closed,reason: Bad username or password");
+
     }
 
     private void singleLogin(Channel channel, M msg) {

@@ -4,6 +4,7 @@ import github.microgalaxy.mqtt.broker.client.ISessionStore;
 import github.microgalaxy.mqtt.broker.client.ISubscribeStore;
 import github.microgalaxy.mqtt.broker.client.Session;
 import github.microgalaxy.mqtt.broker.client.Subscribe;
+import github.microgalaxy.mqtt.broker.handler.MqttException;
 import github.microgalaxy.mqtt.broker.message.DupPublishMessage;
 import github.microgalaxy.mqtt.broker.message.IMessagePacketId;
 import github.microgalaxy.mqtt.broker.message.RetainMessage;
@@ -91,6 +92,28 @@ public class MqttPublish<T extends MqttMessageType, M extends MqttPublishMessage
         return T.PUBLISH;
     }
 
+    @Override
+    public void onHandlerError(Channel channel, M msg, MqttException ex) {
+        MqttQoS mqttQoS = msg.fixedHeader().qosLevel();
+        MqttMessage mqttErrorMessage = null;
+        if (MqttQoS.AT_LEAST_ONCE == mqttQoS) {
+            mqttErrorMessage = MqttMessageBuilders.pubAck()
+                    .packetId(msg.variableHeader().packetId())
+                    .reasonCode((byte) ex.getReasonCode())
+                    .build();
+        }
+        if (MqttQoS.EXACTLY_ONCE == mqttQoS) {
+            mqttErrorMessage = MqttMessageFactory.newMessage(
+                    new MqttFixedHeader(MqttMessageType.PUBREC, false, MqttQoS.AT_MOST_ONCE, false, 0),
+                    new MqttPubReplyMessageVariableHeader(msg.variableHeader().packetId(), (byte) ex.getReasonCode(), MqttProperties.NO_PROPERTIES),
+                    null);
+        }
+        channel.writeAndFlush(mqttErrorMessage);
+        if (ex.isDisConnect()) {
+            channel.close();
+            log.info(ex.getMessage());
+        }
+    }
 
     private void sendPubAckMessage(Channel channel, int packetId) {
         MqttMessage pubAckMessage = MqttMessageBuilders.pubAck()

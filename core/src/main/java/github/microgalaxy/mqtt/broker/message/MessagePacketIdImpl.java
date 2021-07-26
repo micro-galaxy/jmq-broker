@@ -1,6 +1,6 @@
 package github.microgalaxy.mqtt.broker.message;
 
-import github.microgalaxy.mqtt.broker.config.MqttException;
+import github.microgalaxy.mqtt.broker.handler.MqttException;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import org.springframework.stereotype.Component;

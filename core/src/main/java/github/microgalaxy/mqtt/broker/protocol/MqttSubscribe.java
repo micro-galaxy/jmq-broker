@@ -4,6 +4,7 @@ import github.microgalaxy.mqtt.broker.client.ISessionStore;
 import github.microgalaxy.mqtt.broker.client.ISubscribeStore;
 import github.microgalaxy.mqtt.broker.client.Session;
 import github.microgalaxy.mqtt.broker.client.Subscribe;
+import github.microgalaxy.mqtt.broker.handler.MqttException;
 import github.microgalaxy.mqtt.broker.message.IMessagePacketId;
 import github.microgalaxy.mqtt.broker.message.RetainMessage;
 import github.microgalaxy.mqtt.broker.nettyex.MqttConnectReturnCodeEx;
@@ -75,6 +76,18 @@ public class MqttSubscribe<T extends MqttMessageType, M extends MqttSubscribeMes
         return T.SUBSCRIBE;
     }
 
+    @Override
+    public void onHandlerError(Channel channel, M msg, MqttException ex) {
+        MqttSubAckMessage subAckErrorMessage = (MqttSubAckMessage) MqttMessageFactory.newMessage(
+                new MqttFixedHeader(MqttMessageType.SUBACK, false, MqttQoS.AT_MOST_ONCE, false, 0),
+                MqttMessageIdVariableHeader.from(msg.variableHeader().messageId()),
+                new MqttSubAckPayload(ex.getReasonCode()));
+        channel.writeAndFlush(subAckErrorMessage);
+        if (ex.isDisConnect()) {
+            channel.close();
+            log.info(ex.getMessage());
+        }
+    }
 
     private void sendRetainMessage(Channel channel, String topicName, MqttQoS qos) {
         List<RetainMessage> retainMessages = retainMessageServer.match(topicName);

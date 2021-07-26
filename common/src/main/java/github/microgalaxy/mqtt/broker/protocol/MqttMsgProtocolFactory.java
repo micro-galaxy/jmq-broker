@@ -1,5 +1,6 @@
 package github.microgalaxy.mqtt.broker.protocol;
 
+import github.microgalaxy.mqtt.broker.handler.MqttException;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageType;
@@ -15,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
-public  class MqttMsgProtocolFactory {
+public class MqttMsgProtocolFactory {
     private static final Logger LOGGER = LoggerFactory.getLogger(MqttMsgProtocolFactory.class);
     private static final Map<MqttMessageType, AbstractMqttMsgProtocol> MQTT_MSG_PROTOCOL_POOL = new ConcurrentHashMap();
 
@@ -26,17 +27,20 @@ public  class MqttMsgProtocolFactory {
         MQTT_MSG_PROTOCOL_POOL.put(type, process);
     }
 
-    public static void processMsg(Channel channel, MqttMessage msg)  {
+    public static void processMsg(Channel channel, MqttMessage msg) {
         AbstractMqttMsgProtocol process = MQTT_MSG_PROTOCOL_POOL.get(msg.fixedHeader().messageType());
         if (!ObjectUtils.isEmpty(process)) {
             try {
                 process.onMqttMsg(channel, process.getMessageType().cast(msg));
-            }catch (Exception e){
-                LOGGER.error("onMqttMsg ERROR,msg:{}",msg.toString(),e);
+            } catch (MqttException e) {
+                LOGGER.info("The Mqtt message handler error, message:{}", msg.toString(), e);
+                process.onHandlerError(channel,process.getMessageType().cast(msg),e);
+            } catch (Exception e) {
+                LOGGER.error("The Mqtt message handler error, message:{}", msg.toString(), e);
             }
 
-        }else {
-            LOGGER.warn("The Mqtt msg handler not implemented,msg:{}",msg.toString());
+        } else {
+            LOGGER.warn("The Mqtt message handler not implemented, message:{}", msg.toString());
         }
     }
 }

@@ -16,5 +16,4 @@ public interface IMqttMsgProtocol<M> {
      * @param msg
      */
     void onMqttMsg(Channel channel, M msg);
-
 }

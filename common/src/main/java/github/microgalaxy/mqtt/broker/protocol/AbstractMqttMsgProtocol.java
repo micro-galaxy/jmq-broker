@@ -1,5 +1,7 @@
 package github.microgalaxy.mqtt.broker.protocol;
 
+import github.microgalaxy.mqtt.broker.handler.MqttException;
+import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import org.slf4j.Logger;
@@ -15,7 +17,7 @@ import java.util.Optional;
  *
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
-public abstract class AbstractMqttMsgProtocol<T, M extends MqttMessage> implements IMqttMsgProtocol<M> {
+public abstract class AbstractMqttMsgProtocol<T, M> implements IMqttMsgProtocol<M> {
     protected final Logger log = LoggerFactory.getLogger(this.getClass());
 
     /**
@@ -24,6 +26,19 @@ public abstract class AbstractMqttMsgProtocol<T, M extends MqttMessage> implemen
      * @return
      */
     public abstract MqttMessageType getHandleType();
+
+    /**
+     * 消息处理器异常处理
+     *
+     * @param channel
+     * @param msg
+     * @param ex
+     * @return
+     */
+    public void onHandlerError(Channel channel, M msg, MqttException ex) {
+        log.info(ex.getMessage(), ex);
+    }
+
 
     @PostConstruct
     private void registerMsgHandle() {
