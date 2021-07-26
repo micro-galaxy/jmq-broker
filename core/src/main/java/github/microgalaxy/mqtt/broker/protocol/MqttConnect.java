@@ -165,6 +165,7 @@ public class MqttConnect<T extends MqttMessageType, M extends MqttConnectMessage
                     .build();
         }
         channel.attr(AttributeKey.valueOf("clientId")).set(msg.payload().clientIdentifier());
+        channel.attr(AttributeKey.valueOf("mqttVersion")).set(mqttVersion);
         Session curSession = new Session(clientId, msg.payload().userName(), channel,
                 msg.variableHeader().isCleanSession(), willMessage, mqttVersion);
         sessionServer.put(clientId, curSession);

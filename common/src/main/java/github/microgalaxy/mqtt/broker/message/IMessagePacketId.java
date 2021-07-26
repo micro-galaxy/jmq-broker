@@ -1,5 +1,7 @@
 package github.microgalaxy.mqtt.broker.message;
 
+import io.netty.handler.codec.mqtt.MqttVersion;
+
 /**
  * Mqtt消息ID接口
  *
@@ -9,9 +11,10 @@ public interface IMessagePacketId {
     /**
      * 获取全局唯一消息ID
      *
+     * @param mqttVersion
      * @return
      */
-    int nextMessageId();
+    int nextMessageId(MqttVersion mqttVersion);
 
     /**
      * 释放消息ID

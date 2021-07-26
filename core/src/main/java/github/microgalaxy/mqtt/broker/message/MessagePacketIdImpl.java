@@ -1,5 +1,8 @@
 package github.microgalaxy.mqtt.broker.message;
 
+import github.microgalaxy.mqtt.broker.config.MqttException;
+import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
+import io.netty.handler.codec.mqtt.MqttVersion;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
 
@@ -17,14 +20,20 @@ public class MessagePacketIdImpl implements IMessagePacketId {
     private int currentPacketId = MIN_PACKET_ID;
 
     @Override
-    public synchronized int nextMessageId() {
+    public synchronized int nextMessageId(MqttVersion mqttVersion) {
+        if (messageIdCatch.size() >= MAX_PACKET_ID)
+            throw new MqttException(
+                    mqttVersion.protocolLevel() >= MqttVersion.MQTT_5.protocolLevel() ?
+                            (int) MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_BUSY.byteValue() :
+                            (int) MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE.byteValue(),
+                    "No message packet ids available");
         if (ObjectUtils.isEmpty(messageIdCatch.get(currentPacketId))) {
             messageIdCatch.put(currentPacketId, currentPacketId);
             return currentPacketId;
         }
         currentPacketId++;
         if (currentPacketId > MAX_PACKET_ID) currentPacketId = MIN_PACKET_ID;
-        return nextMessageId();
+        return nextMessageId(mqttVersion);
     }
 
     @Override

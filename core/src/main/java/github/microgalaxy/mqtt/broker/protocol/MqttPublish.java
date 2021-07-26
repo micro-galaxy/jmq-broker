@@ -117,8 +117,7 @@ public class MqttPublish<T extends MqttMessageType, M extends MqttPublishMessage
         subscribes.forEach(s -> {
             Session session = sessionStoreServer.get(s.getClientId());
             if (ObjectUtils.isEmpty(session)) return;
-
-            int messageId = messagePacketIdServer.nextMessageId();
+            int messageId = messagePacketIdServer.nextMessageId((MqttVersion) session.getChannel().attr(AttributeKey.valueOf("mqttVersion")).get());
             MqttQoS targetQos = MqttQoS.valueOf(Math.min(s.getQos().value(), publishMessage.fixedHeader().qosLevel().value()));
             MqttPublishMessage message = MqttMessageBuilders.publish()
                     .topicName(publishMessage.variableHeader().topicName())

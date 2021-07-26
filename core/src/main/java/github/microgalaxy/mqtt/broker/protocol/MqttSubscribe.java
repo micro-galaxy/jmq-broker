@@ -80,7 +80,8 @@ public class MqttSubscribe<T extends MqttMessageType, M extends MqttSubscribeMes
         List<RetainMessage> retainMessages = retainMessageServer.match(topicName);
         retainMessages.forEach(m -> {
             MqttQoS targetQos = MqttQoS.valueOf(Math.min(m.getQos().value(), qos.value()));
-            int messageId = MqttQoS.AT_MOST_ONCE == targetQos ? 0 : messagePacketIdServer.nextMessageId();
+            int messageId = MqttQoS.AT_MOST_ONCE == targetQos ? 0 :
+                    messagePacketIdServer.nextMessageId((MqttVersion) channel.attr(AttributeKey.valueOf("mqttVersion")).get());
             MqttPublishMessage publishMessage = MqttMessageBuilders.publish()
                     .topicName(m.getTopic())
                     .messageId(messageId)
