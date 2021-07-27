@@ -53,7 +53,7 @@ public class SubscribeStoreImpl implements ISubscribeStore {
     @Override
     public List<Subscribe> matchTopic(String topicFilter) {
         return clientSubscribeCatch.entrySet().stream()
-                .filter(v -> TopicUtils.matchingTopic(v.getKey(), topicFilter))
+                .filter(v -> TopicUtils.matchingTopic(topicFilter,v.getKey()))
                 .map(v -> v.getValue().values())
                 .collect(ArrayList::new, ArrayList::addAll, ArrayList::addAll);
     }

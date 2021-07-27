@@ -2,8 +2,7 @@ package github.microgalaxy.mqtt.broker.protocol;
 
 import github.microgalaxy.mqtt.broker.handler.MqttException;
 import io.netty.channel.Channel;
-import io.netty.handler.codec.mqtt.MqttMessage;
-import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.ObjectUtils;
@@ -34,9 +33,14 @@ public class MqttMsgProtocolFactory {
                 process.onMqttMsg(channel, process.getMessageType().cast(msg));
             } catch (MqttException e) {
                 LOGGER.info("The Mqtt message handler error, message:{}", msg.toString(), e);
-                process.onHandlerError(channel,process.getMessageType().cast(msg),e);
+                process.onHandlerError(channel, process.getMessageType().cast(msg), e);
             } catch (Exception e) {
                 LOGGER.error("The Mqtt message handler error, message:{}", msg.toString(), e);
+                MqttMessage disconnectMessage = MqttMessageBuilders.disconnect()
+                        .reasonCode(MqttConnectReturnCode.CONNECTION_REFUSED_MALFORMED_PACKET.byteValue())
+                        .build();
+                channel.writeAndFlush(disconnectMessage);
+                channel.close();
             }
 
         } else {
