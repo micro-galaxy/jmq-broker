@@ -135,7 +135,7 @@ public class MqttPublish<T extends MqttMessageType, M extends MqttPublishMessage
             log.debug("SEND - Send pubRec packet: clientId:{}, messageId:{}",
                     channel.attr(AttributeKey.valueOf("clientId")).get(), packetId);
     }
-    //TODO 要使用队列，提高消息并发量，大于qos0的消息并发超过2^16 消息id就不可用
+
     public void sendPublishMessage(MqttPublishMessage publishMessage, boolean needDup) {
         List<Subscribe> subscribes = subscribeStoreServer.matchTopic(publishMessage.variableHeader().topicName());
         subscribes.forEach(s -> {

@@ -19,22 +19,16 @@ public class MessagePacketIdImpl implements IMessagePacketId {
     private final Map<Integer, Integer> messageIdCatch = new ConcurrentHashMap<>(MAX_PACKET_ID);
     private int currentPacketId = MIN_PACKET_ID;
 
-    //TODO 提高消息并发，不使用递归
     @Override
     public synchronized int nextMessageId(MqttVersion mqttVersion) {
-        if (messageIdCatch.size() >= MAX_PACKET_ID)
-            throw new MqttException(
-                    mqttVersion.protocolLevel() >= MqttVersion.MQTT_5.protocolLevel() ?
-                            (int) MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_BUSY.byteValue() :
-                            (int) MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE.byteValue(),
-                    "No message packet ids available");
-        if (ObjectUtils.isEmpty(messageIdCatch.get(currentPacketId))) {
-            messageIdCatch.put(currentPacketId, currentPacketId);
-            return currentPacketId;
+        for (; ; ) {
+            if (!messageIdCatch.containsKey(currentPacketId)) {
+                messageIdCatch.put(currentPacketId, currentPacketId);
+                return currentPacketId;
+            }
+            currentPacketId++;
+            if (currentPacketId > MAX_PACKET_ID) currentPacketId = MIN_PACKET_ID;
         }
-        currentPacketId++;
-        if (currentPacketId > MAX_PACKET_ID) currentPacketId = MIN_PACKET_ID;
-        return nextMessageId(mqttVersion);
     }
 
     @Override
