@@ -19,6 +19,7 @@ public class MessagePacketIdImpl implements IMessagePacketId {
     private final Map<Integer, Integer> messageIdCatch = new ConcurrentHashMap<>(MAX_PACKET_ID);
     private int currentPacketId = MIN_PACKET_ID;
 
+    //TODO 提高消息并发，不使用递归
     @Override
     public synchronized int nextMessageId(MqttVersion mqttVersion) {
         if (messageIdCatch.size() >= MAX_PACKET_ID)

@@ -21,9 +21,9 @@ public class MqttPingReq<T extends MqttMessageType, M extends MqttMessage> exten
      */
     @Override
     public void onMqttMsg(Channel channel, M msg) {
-        if(log.isDebugEnabled())
-            log.debug("PINGREQ - Ping request arrives: clientId:{}",channel.attr(AttributeKey.valueOf("clientId")).get());
-        MqttMessage pingRespMessage =  MqttMessageFactory.newMessage(
+        if (log.isDebugEnabled())
+            log.debug("PINGREQ - Ping request arrives: clientId:{}", channel.attr(AttributeKey.valueOf("clientId")).get());
+        MqttMessage pingRespMessage = MqttMessageFactory.newMessage(
                 new MqttFixedHeader(MqttMessageType.PINGRESP, false, MqttQoS.AT_MOST_ONCE, false, 0),
                 null, null);
         channel.writeAndFlush(pingRespMessage);

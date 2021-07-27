@@ -150,7 +150,7 @@ public class MqttConnect<T extends MqttMessageType, M extends MqttConnectMessage
                 .sessionPresent(!msg.variableHeader().isCleanSession())
                 .build();
         channel.writeAndFlush(connAckMessage);
-        log.info("CONNECT - Client connected: clientId:{}, clearSession:{}", clientId, msg.variableHeader().isCleanSession());
+        log.info("CONNECT - Client connected: clientId:{}, mqttVersion: {}, clearSession:{}", clientId, mqttVersion, msg.variableHeader().isCleanSession());
     }
 
 

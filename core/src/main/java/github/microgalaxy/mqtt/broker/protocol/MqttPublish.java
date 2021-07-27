@@ -75,8 +75,9 @@ public class MqttPublish<T extends MqttMessageType, M extends MqttPublishMessage
         if (MqttQoS.EXACTLY_ONCE == mqttQoS) {
             sendPubRecMessage(channel, msg.variableHeader().packetId());
         }
-        sendPublishMessage(publishMessage, true);
+
         internalCommunicationServer.sendInternalMessage(internalMessage);
+        sendPublishMessage(publishMessage, true);
         if (msg.fixedHeader().isRetain()) {
             if (messageBytes.length == 0) {
                 dupRetainMessageServer.remove(topic);
@@ -134,14 +135,15 @@ public class MqttPublish<T extends MqttMessageType, M extends MqttPublishMessage
             log.debug("SEND - Send pubRec packet: clientId:{}, messageId:{}",
                     channel.attr(AttributeKey.valueOf("clientId")).get(), packetId);
     }
-
+    //TODO 要使用队列，提高消息并发量，大于qos0的消息并发超过2^16 消息id就不可用
     public void sendPublishMessage(MqttPublishMessage publishMessage, boolean needDup) {
         List<Subscribe> subscribes = subscribeStoreServer.matchTopic(publishMessage.variableHeader().topicName());
         subscribes.forEach(s -> {
             Session session = sessionStoreServer.get(s.getClientId());
             if (ObjectUtils.isEmpty(session)) return;
-            int messageId = messagePacketIdServer.nextMessageId((MqttVersion) session.getChannel().attr(AttributeKey.valueOf("mqttVersion")).get());
             MqttQoS targetQos = MqttQoS.valueOf(Math.min(s.getQos().value(), publishMessage.fixedHeader().qosLevel().value()));
+            int messageId = MqttQoS.AT_MOST_ONCE == targetQos ? 0 :
+                    messagePacketIdServer.nextMessageId((MqttVersion) session.getChannel().attr(AttributeKey.valueOf("mqttVersion")).get());
             MqttPublishMessage message = MqttMessageBuilders.publish()
                     .topicName(publishMessage.variableHeader().topicName())
                     .messageId(messageId)
