@@ -41,17 +41,32 @@ public abstract class TopicUtils {
         return true;
     }
 
-    public static boolean matchingTopic(String originTopic, String topicFilter) {
-        String[] topicFilters = topicFilter.split(BrokerConstant.ShareSubscribe.SUBSCRIBE_TIER_SPLIT);
-        String[] originTopics = originTopic.split(BrokerConstant.ShareSubscribe.SUBSCRIBE_TIER_SPLIT);
-        if (topicFilters.length > originTopics.length) return false;
-        String matchingTopic = IntStream.range(0, topicFilters.length).mapToObj(i -> {
-            String tier = topicFilters[i];
+    public static boolean matchingTopic(String subscriptTopic, String publishTopic) {
+        String[] publishTopics = publishTopic.split(BrokerConstant.ShareSubscribe.SUBSCRIBE_TIER_SPLIT);
+        String[] subscriptTopics = subscriptTopic.split(BrokerConstant.ShareSubscribe.SUBSCRIBE_TIER_SPLIT);
+        if (publishTopics.length < subscriptTopics.length) return false;
+        String matchingTopic = IntStream.range(0, subscriptTopics.length).mapToObj(i -> {
+            String tier = subscriptTopics[i];
             if (Objects.equals(tier, BrokerConstant.ShareSubscribe.SUBSCRIBE_ONE_TIER) ||
-                    Objects.equals(tier, BrokerConstant.ShareSubscribe.SUBSCRIBE_MULTIPLE_TIER)) return tier;
-            return originTopics[i];
+                    Objects.equals(tier, BrokerConstant.ShareSubscribe.SUBSCRIBE_MULTIPLE_TIER))
+                return publishTopics[i];
+            return subscriptTopics[i];
         }).collect(Collectors.joining(BrokerConstant.ShareSubscribe.SUBSCRIBE_TIER_SPLIT));
-        return Objects.equals(matchingTopic, topicFilter);
+        return Objects.equals(matchingTopic, publishTopic);
+    }
+
+    public static boolean matchingShareTopic(String subscriptTopic, String publishTopic) {
+//        String[] publishTopics = publishTopic.split(BrokerConstant.ShareSubscribe.SUBSCRIBE_TIER_SPLIT);
+//        String[] subscriptTopics = subscriptTopic.split(BrokerConstant.ShareSubscribe.SUBSCRIBE_TIER_SPLIT);
+//        if (publishTopics.length < subscriptTopics.length) return false;
+//        String matchingTopic = IntStream.range(0, subscriptTopics.length).mapToObj(i -> {
+//            String tier = subscriptTopics[i];
+//            if (Objects.equals(tier, BrokerConstant.ShareSubscribe.SUBSCRIBE_ONE_TIER) ||
+//                    Objects.equals(tier, BrokerConstant.ShareSubscribe.SUBSCRIBE_MULTIPLE_TIER))
+//                return publishTopics[i];
+//            return subscriptTopics[i];
+//        }).collect(Collectors.joining(BrokerConstant.ShareSubscribe.SUBSCRIBE_TIER_SPLIT));
+//        return Objects.equals(matchingTopic, publishTopic);
     }
 
 

@@ -26,9 +26,9 @@ public class DupRetainMessageImpl implements IDupRetainMessage {
     }
 
     @Override
-    public List<RetainMessage> match(String topicFilter) {
+    public List<RetainMessage> match(String subscribeTopic) {
         return retainMessageCatch.entrySet().stream()
-                .filter(v -> TopicUtils.matchingTopic(v.getKey(), topicFilter))
+                .filter(v -> TopicUtils.matchingTopic(subscribeTopic,v.getKey()))
                 .map(Map.Entry::getValue)
                 .collect(Collectors.toList());
     }

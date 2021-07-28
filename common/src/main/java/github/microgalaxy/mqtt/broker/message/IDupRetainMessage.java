@@ -27,10 +27,10 @@ public interface IDupRetainMessage {
     /**
      * 获取消息集合
      *
-     * @param topicFilter
+     * @param subscribeTopic
      * @return
      */
-    List<RetainMessage> match(String topicFilter);
+    List<RetainMessage> match(String subscribeTopic);
 
     /**
      * 移除指定消息

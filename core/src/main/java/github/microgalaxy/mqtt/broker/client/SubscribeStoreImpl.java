@@ -1,5 +1,6 @@
 package github.microgalaxy.mqtt.broker.client;
 
+import github.microgalaxy.mqtt.broker.config.BrokerConstant;
 import github.microgalaxy.mqtt.broker.util.TopicUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -15,25 +16,32 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class SubscribeStoreImpl implements ISubscribeStore {
     private final Map<String, Map<String, Subscribe>> clientSubscribeCatch = new ConcurrentHashMap<>();
+    private final Map<String, Map<String, Subscribe>> clientShareSubscribeCatch = new ConcurrentHashMap<>();
 
     @Override
     public void put(String topic, Subscribe subscribe) {
-        Map<String, Subscribe> subscribeMap = clientSubscribeCatch.containsKey(topic) ?
-                clientSubscribeCatch.get(topic) : new ConcurrentHashMap<>();
+        Map<String, Map<String, Subscribe>> topicSubscribeMap =
+                topic.startsWith(BrokerConstant.ShareSubscribe.SUBSCRIBE_SHARE_PREFIX) ?
+                        clientShareSubscribeCatch : clientSubscribeCatch;
+        Map<String, Subscribe> subscribeMap = topicSubscribeMap.containsKey(topic) ?
+                topicSubscribeMap.get(topic) : new ConcurrentHashMap<>();
         subscribeMap.put(subscribe.getClientId(), subscribe);
-        clientSubscribeCatch.put(topic, subscribeMap);
+        topicSubscribeMap.put(topic, subscribeMap);
     }
 
     @Override
     public void remove(String topic, String clientId) {
-        if (!clientSubscribeCatch.containsKey(topic)) return;
-        Map<String, Subscribe> subscribeMap = clientSubscribeCatch.get(topic);
+        Map<String, Map<String, Subscribe>> topicSubscribeMap =
+                topic.startsWith(BrokerConstant.ShareSubscribe.SUBSCRIBE_SHARE_PREFIX) ?
+                        clientShareSubscribeCatch : clientSubscribeCatch;
+        if (!topicSubscribeMap.containsKey(topic)) return;
+        Map<String, Subscribe> subscribeMap = topicSubscribeMap.get(topic);
         if (!subscribeMap.containsKey(clientId)) return;
         subscribeMap.remove(clientId);
         if (CollectionUtils.isEmpty(subscribeMap)) {
-            clientSubscribeCatch.remove(topic);
+            topicSubscribeMap.remove(topic);
         } else {
-            clientSubscribeCatch.put(topic, subscribeMap);
+            topicSubscribeMap.put(topic, subscribeMap);
         }
     }
 
@@ -48,13 +56,27 @@ public class SubscribeStoreImpl implements ISubscribeStore {
                 clientSubscribeCatch.put(key, subscribeMap);
             }
         });
+        clientShareSubscribeCatch.forEach((key, subscribeMap) -> {
+            if (!subscribeMap.containsKey(clientId)) return;
+            subscribeMap.remove(clientId);
+            if (CollectionUtils.isEmpty(subscribeMap)) {
+                subscribeMap.remove(key);
+            } else {
+                clientShareSubscribeCatch.put(key, subscribeMap);
+            }
+        });
     }
 
     @Override
-    public List<Subscribe> matchTopic(String topicFilter) {
-        return clientSubscribeCatch.entrySet().stream()
-                .filter(v -> TopicUtils.matchingTopic(topicFilter,v.getKey()))
+    public List<Subscribe> matchTopic(String publishTopic) {
+        List<Subscribe> subscribes = clientShareSubscribeCatch.entrySet().stream()
+                .filter(v -> TopicUtils.matchingShareTopic(v.getKey(), publishTopic))
                 .map(v -> v.getValue().values())
                 .collect(ArrayList::new, ArrayList::addAll, ArrayList::addAll);
+
+        return CollectionUtils.isEmpty(subscribes) ? clientSubscribeCatch.entrySet().stream()
+                .filter(v -> TopicUtils.matchingTopic(v.getKey(), publishTopic))
+                .map(v -> v.getValue().values())
+                .collect(ArrayList::new, ArrayList::addAll, ArrayList::addAll) : subscribes;
     }
 }

@@ -89,8 +89,8 @@ public class MqttSubscribe<T extends MqttMessageType, M extends MqttSubscribeMes
         }
     }
 
-    private void sendRetainMessage(Channel channel, String topicName, MqttQoS qos) {
-        List<RetainMessage> retainMessages = retainMessageServer.match(topicName);
+    private void sendRetainMessage(Channel channel, String subscribeTopic, MqttQoS qos) {
+        List<RetainMessage> retainMessages = retainMessageServer.match(subscribeTopic);
         retainMessages.forEach(m -> {
             MqttQoS targetQos = MqttQoS.valueOf(Math.min(m.getQos().value(), qos.value()));
             int messageId = MqttQoS.AT_MOST_ONCE == targetQos ? 0 :
