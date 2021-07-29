@@ -137,7 +137,10 @@ public class MqttPublish<T extends MqttMessageType, M extends MqttPublishMessage
     }
 
     public void sendPublishMessage(MqttPublishMessage publishMessage, boolean needDup) {
+        List<Subscribe> shareSubscribes = subscribeStoreServer.matchShareTopic(publishMessage.variableHeader().topicName());
         List<Subscribe> subscribes = subscribeStoreServer.matchTopic(publishMessage.variableHeader().topicName());
+
+
         subscribes.forEach(s -> {
             Session session = sessionStoreServer.get(s.getClientId());
             if (ObjectUtils.isEmpty(session)) return;

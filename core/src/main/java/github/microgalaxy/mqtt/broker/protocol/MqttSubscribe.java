@@ -4,6 +4,7 @@ import github.microgalaxy.mqtt.broker.client.ISessionStore;
 import github.microgalaxy.mqtt.broker.client.ISubscribeStore;
 import github.microgalaxy.mqtt.broker.client.Session;
 import github.microgalaxy.mqtt.broker.client.Subscribe;
+import github.microgalaxy.mqtt.broker.config.BrokerProperties;
 import github.microgalaxy.mqtt.broker.handler.MqttException;
 import github.microgalaxy.mqtt.broker.message.IMessagePacketId;
 import github.microgalaxy.mqtt.broker.message.RetainMessage;
@@ -29,6 +30,8 @@ import java.util.stream.Collectors;
  */
 @Component
 public class MqttSubscribe<T extends MqttMessageType, M extends MqttSubscribeMessage> extends AbstractMqttMsgProtocol<T, M> {
+    @Autowired
+    private BrokerProperties brokerProperties;
     @Autowired
     private ISessionStore sessionServer;
     @Autowired
@@ -61,8 +64,10 @@ public class MqttSubscribe<T extends MqttMessageType, M extends MqttSubscribeMes
         if (!CollectionUtils.isEmpty(reasonCodes)) return;
 
         //store subscribe
+        long now = System.currentTimeMillis();
         subTopics.forEach(t -> {
-            Subscribe subscribe = new Subscribe(session.getClientId(), t.topicName(), t.qualityOfService());
+            Subscribe subscribe = new Subscribe(session.getClientId(), t.topicName(),
+                    t.qualityOfService(),brokerProperties.getBrokerId(),now);
             subscribeStoreServer.put(t.topicName(), subscribe);
             if (log.isDebugEnabled())
                 log.debug("SUBSCRIBE - Client subscribe topic: clientId:{}, topic:{}", session.getClientId(), t);

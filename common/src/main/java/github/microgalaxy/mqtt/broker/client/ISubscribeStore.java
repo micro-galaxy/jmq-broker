@@ -34,8 +34,16 @@ public interface ISubscribeStore {
     /**
      * topic匹配订阅客户端
      *
-     * @param topicFilter
+     * @param publishTopic
      * @return
      */
-    List<Subscribe> matchTopic(String topicFilter);
+    List<Subscribe> matchTopic(String publishTopic);
+
+    /**
+     * 共享topic匹配订阅客户端
+     *
+     * @param publishTopic
+     * @return
+     */
+    List<Subscribe> matchShareTopic(String publishTopic);
 }

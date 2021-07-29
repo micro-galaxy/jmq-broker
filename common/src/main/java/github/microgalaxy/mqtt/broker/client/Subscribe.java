@@ -18,10 +18,16 @@ public final class Subscribe implements Serializable {
 
     private final MqttQoS qos;
 
-    public Subscribe(String clientId, String topic, MqttQoS qos) {
+    private final String jmqId;
+
+    private final Long subTimestamp;
+
+    public Subscribe(String clientId, String topic, MqttQoS qos, String jmqId,Long subTimestamp) {
         this.clientId = clientId;
         this.topic = topic;
         this.qos = qos;
+        this.jmqId = jmqId;
+        this.subTimestamp = subTimestamp;
     }
 
     public String getClientId() {
@@ -34,5 +40,13 @@ public final class Subscribe implements Serializable {
 
     public MqttQoS getQos() {
         return qos;
+    }
+
+    public String getJmqId() {
+        return jmqId;
+    }
+
+    public Long getSubTimestamp() {
+        return subTimestamp;
     }
 }

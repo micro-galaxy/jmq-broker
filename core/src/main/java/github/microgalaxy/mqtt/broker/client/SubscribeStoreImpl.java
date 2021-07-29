@@ -69,14 +69,17 @@ public class SubscribeStoreImpl implements ISubscribeStore {
 
     @Override
     public List<Subscribe> matchTopic(String publishTopic) {
-        List<Subscribe> subscribes = clientShareSubscribeCatch.entrySet().stream()
+        return clientSubscribeCatch.entrySet().stream()
+                .filter(v -> TopicUtils.matchingTopic(v.getKey(), publishTopic))
+                .map(v -> v.getValue().values())
+                .collect(ArrayList::new, ArrayList::addAll, ArrayList::addAll);
+    }
+
+    @Override
+    public List<Subscribe> matchShareTopic(String publishTopic) {
+        return clientShareSubscribeCatch.entrySet().stream()
                 .filter(v -> TopicUtils.matchingShareTopic(v.getKey(), publishTopic))
                 .map(v -> v.getValue().values())
                 .collect(ArrayList::new, ArrayList::addAll, ArrayList::addAll);
-
-        return CollectionUtils.isEmpty(subscribes) ? clientSubscribeCatch.entrySet().stream()
-                .filter(v -> TopicUtils.matchingTopic(v.getKey(), publishTopic))
-                .map(v -> v.getValue().values())
-                .collect(ArrayList::new, ArrayList::addAll, ArrayList::addAll) : subscribes;
     }
 }
