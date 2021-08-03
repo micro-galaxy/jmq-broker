@@ -8,6 +8,7 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -96,8 +97,7 @@ public abstract class TopicUtils {
                 List<Subscribe> removeSubscribe = subscribeMap.get(String.join("-", shareToBaseTopic(v.getTopic()), v.getClientId()));
                 if (!CollectionUtils.isEmpty(removeSubscribe)) subscribes.removeAll(removeSubscribe);
             });
-
-            Subscribe shareSubscribe = l.get((int) (System.currentTimeMillis() % l.size()));
+            Subscribe shareSubscribe = l.get(ThreadLocalRandom.current().nextInt(0,l.size()) % l.size());
             List<Subscribe> subscribe = Optional.ofNullable(subscribeMap.get(String.join("-",
                     shareToBaseTopic(shareSubscribe.getTopic()), shareSubscribe.getClientId())))
                     .orElse(Collections.emptyList());
