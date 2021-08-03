@@ -68,6 +68,12 @@ public class MqttSubscribe<T extends MqttMessageType, M extends MqttSubscribeMes
         subTopics.forEach(t -> {
             Subscribe subscribe = new Subscribe(session.getClientId(), t.topicName(),
                     t.qualityOfService(),brokerProperties.getBrokerId(),now);
+            if(subscribeStoreServer.repeatSubscribe(subscribe.getClientId(),subscribe.getTopic()))
+                throw new MqttException(MqttVersion.MQTT_5 == session.getMqttProtocolVersion() ?
+                        (int) MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE.byteValue() :
+                        (int) MqttConnectReturnCode.CONNECTION_REFUSED_TOPIC_NAME_INVALID.byteValue(),
+                        false, "SUBSCRIBE - Repeat subscribe,reason: Client subscribe already exists");
+
             subscribeStoreServer.put(t.topicName(), subscribe);
             if (log.isDebugEnabled())
                 log.debug("SUBSCRIBE - Client subscribe topic: clientId:{}, topic:{}", session.getClientId(), t);

@@ -10,6 +10,9 @@ import github.microgalaxy.mqtt.broker.message.IMessagePacketId;
 import github.microgalaxy.mqtt.broker.message.RetainMessage;
 import github.microgalaxy.mqtt.broker.message.IDupPublishMessage;
 import github.microgalaxy.mqtt.broker.message.IDupRetainMessage;
+import github.microgalaxy.mqtt.broker.util.TopicUtils;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.mqtt.MqttQoS;
 
 import github.microgalaxy.mqtt.broker.internal.IInternalCommunication;
@@ -21,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -53,13 +57,14 @@ public class MqttPublish<T extends MqttMessageType, M extends MqttPublishMessage
     public void onMqttMsg(Channel channel, M msg) {
         String topic = msg.variableHeader().topicName();
         MqttQoS mqttQoS = msg.fixedHeader().qosLevel();
-        byte[] messageBytes = new byte[msg.payload().readableBytes()];
-        msg.payload().getBytes(msg.payload().readerIndex(), messageBytes);
+        ByteBuf payload = msg.payload();
+        byte[] messageBytes = new byte[payload.readableBytes()];
+        payload.getBytes(payload.readerIndex(), messageBytes);
         MqttPublishMessage publishMessage = MqttMessageBuilders.publish()
                 .topicName(topic)
                 .messageId(msg.variableHeader().packetId())
                 .qos(mqttQoS)
-                .payload(msg.payload())
+                .payload(payload)
                 .retained(false)
                 .build();
         InternalMessage internalMessage = new InternalMessage();
@@ -137,11 +142,13 @@ public class MqttPublish<T extends MqttMessageType, M extends MqttPublishMessage
     }
 
     public void sendPublishMessage(MqttPublishMessage publishMessage, boolean needDup) {
-        List<Subscribe> shareSubscribes = subscribeStoreServer.matchShareTopic(publishMessage.variableHeader().topicName());
-        List<Subscribe> subscribes = subscribeStoreServer.matchTopic(publishMessage.variableHeader().topicName());
-
-
-        subscribes.forEach(s -> {
+        Collection<Subscribe> shareSubscribes = subscribeStoreServer.matchShareTopic(publishMessage.variableHeader().topicName());
+        Collection<Subscribe> subscribes = subscribeStoreServer.matchTopic(publishMessage.variableHeader().topicName());
+        Collection<Subscribe> sendSubscribes = TopicUtils.filterTopic(shareSubscribes,subscribes);
+        ByteBuf payload = publishMessage.payload();
+        byte[] messageBytes = new byte[payload.readableBytes()];
+        payload.getBytes(payload.readableBytes(), messageBytes);
+        sendSubscribes.forEach(s -> {
             Session session = sessionStoreServer.get(s.getClientId());
             if (ObjectUtils.isEmpty(session)) return;
             MqttQoS targetQos = MqttQoS.valueOf(Math.min(s.getQos().value(), publishMessage.fixedHeader().qosLevel().value()));
@@ -152,11 +159,9 @@ public class MqttPublish<T extends MqttMessageType, M extends MqttPublishMessage
                     .messageId(messageId)
                     .qos(targetQos)
                     .retained(publishMessage.fixedHeader().isRetain())
-                    .payload(publishMessage.payload())
+                    .payload(Unpooled.copiedBuffer(payload))
                     .build();
             if (targetQos.value() > MqttQoS.AT_MOST_ONCE.value() && needDup) {
-                byte[] messageBytes = new byte[publishMessage.payload().readableBytes()];
-                publishMessage.payload().getBytes(publishMessage.payload().readableBytes(), messageBytes);
                 DupPublishMessage dupPublishMessage = new DupPublishMessage(s.getClientId(), s.getTopic(), targetQos, messageId, messageBytes);
                 dupPublishMessageServer.put(s.getClientId(), dupPublishMessage);
             }

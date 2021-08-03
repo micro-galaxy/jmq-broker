@@ -4,10 +4,9 @@ import github.microgalaxy.mqtt.broker.config.BrokerConstant;
 import github.microgalaxy.mqtt.broker.util.TopicUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.ObjectUtils;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -68,7 +67,7 @@ public class SubscribeStoreImpl implements ISubscribeStore {
     }
 
     @Override
-    public List<Subscribe> matchTopic(String publishTopic) {
+    public Collection<Subscribe> matchTopic(String publishTopic) {
         return clientSubscribeCatch.entrySet().stream()
                 .filter(v -> TopicUtils.matchingTopic(v.getKey(), publishTopic))
                 .map(v -> v.getValue().values())
@@ -76,10 +75,29 @@ public class SubscribeStoreImpl implements ISubscribeStore {
     }
 
     @Override
-    public List<Subscribe> matchShareTopic(String publishTopic) {
+    public Collection<Subscribe> matchShareTopic(String publishTopic) {
         return clientShareSubscribeCatch.entrySet().stream()
                 .filter(v -> TopicUtils.matchingShareTopic(v.getKey(), publishTopic))
                 .map(v -> v.getValue().values())
                 .collect(ArrayList::new, ArrayList::addAll, ArrayList::addAll);
+    }
+
+    @Override
+    public void upNode(String clientId, String brokerId) {
+        clientSubscribeCatch.forEach((key, value) -> {
+            Subscribe subscribe = value.get(clientId);
+            if (!ObjectUtils.isEmpty(subscribe)) subscribe.setJmqId(brokerId);
+        });
+        clientShareSubscribeCatch.forEach((key, value) -> {
+            Subscribe subscribe = value.get(clientId);
+            if (!ObjectUtils.isEmpty(subscribe)) subscribe.setJmqId(brokerId);
+        });
+    }
+
+    @Override
+    public boolean repeatSubscribe(String clientId, String topic) {
+        Object subscribe = Optional.ofNullable(clientSubscribeCatch.get(topic)).orElse(Collections.EMPTY_MAP).get(clientId);
+        Object shareSubscribe = Optional.ofNullable(clientShareSubscribeCatch.get(topic)).orElse(Collections.EMPTY_MAP).get(clientId);
+        return !ObjectUtils.isEmpty(subscribe) || !ObjectUtils.isEmpty(shareSubscribe);
     }
 }

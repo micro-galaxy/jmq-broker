@@ -5,6 +5,7 @@ import github.microgalaxy.mqtt.broker.auth.LoginAuthInterface;
 import github.microgalaxy.mqtt.broker.client.ISessionStore;
 import github.microgalaxy.mqtt.broker.client.ISubscribeStore;
 import github.microgalaxy.mqtt.broker.client.Session;
+import github.microgalaxy.mqtt.broker.config.BrokerProperties;
 import github.microgalaxy.mqtt.broker.handler.MqttException;
 import github.microgalaxy.mqtt.broker.message.IDupPubRelMessage;
 import github.microgalaxy.mqtt.broker.message.IDupPublishMessage;
@@ -37,6 +38,8 @@ public class MqttConnect<T extends MqttMessageType, M extends MqttConnectMessage
     private IDupPublishMessage dupPublishMessageServer;
     @Autowired
     private IDupPubRelMessage dupPubRelMessageServer;
+    @Autowired
+    private BrokerProperties brokerProperties;
 
     /**
      * 发起连接消息
@@ -121,13 +124,9 @@ public class MqttConnect<T extends MqttMessageType, M extends MqttConnectMessage
                 subscribeServer.removeClient(clientId);
                 dupPublishMessageServer.removeClient(clientId);
                 dupPubRelMessageServer.removeClient(clientId);
+            }else {
+                subscribeServer.upNode(clientId,brokerProperties.getBrokerId());
             }
-            MqttConnAckMessage connAckMessage = MqttMessageBuilders.connAck()
-                    .returnCode(mqttVersion == MqttVersion.MQTT_5 ?
-                            MqttConnectReturnCode.CONNECTION_REFUSED_CLIENT_IDENTIFIER_NOT_VALID : MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED)
-                    .sessionPresent(false)
-                    .build();
-            previousSession.getChannel().writeAndFlush(connAckMessage);
             previousSession.getChannel().close();
         }
         //will message
@@ -166,14 +165,15 @@ public class MqttConnect<T extends MqttMessageType, M extends MqttConnectMessage
     private void processDupMsg(Channel channel, M msg) {
         if (msg.variableHeader().isCleanSession())
             return;
-        dupPublishMessageServer.get(msg.payload().clientIdentifier())
+        MqttConnectPayload payload = msg.payload();
+        dupPublishMessageServer.get(payload.clientIdentifier())
                 .forEach(m -> {
                     MqttPublishMessage publishMessage = (MqttPublishMessage) MqttMessageFactory.newMessage(
                             new MqttFixedHeader(MqttMessageType.PUBLISH, true, m.getQos(), false, 0),
                             new MqttPublishVariableHeader(m.getTopic(), m.getMessageId()), m.getPayload());
                     channel.writeAndFlush(publishMessage);
                 });
-        dupPubRelMessageServer.get(msg.payload().clientIdentifier())
+        dupPubRelMessageServer.get(payload.clientIdentifier())
                 .forEach(m -> {
                     MqttMessage pubRelMessage = MqttMessageFactory.newMessage(
                             new MqttFixedHeader(MqttMessageType.PUBREL, true, MqttQoS.AT_MOST_ONCE, false, 0),

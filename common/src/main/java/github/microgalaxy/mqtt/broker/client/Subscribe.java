@@ -18,7 +18,7 @@ public final class Subscribe implements Serializable {
 
     private final MqttQoS qos;
 
-    private final String jmqId;
+    private String jmqId;
 
     private final Long subTimestamp;
 
@@ -44,6 +44,10 @@ public final class Subscribe implements Serializable {
 
     public String getJmqId() {
         return jmqId;
+    }
+
+    public void setJmqId(String jmqId) {
+        this.jmqId = jmqId;
     }
 
     public Long getSubTimestamp() {

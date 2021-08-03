@@ -1,6 +1,6 @@
 package github.microgalaxy.mqtt.broker.client;
 
-import java.util.List;
+import java.util.Collection;
 
 /**
  * 客户端订阅服务接口
@@ -37,7 +37,7 @@ public interface ISubscribeStore {
      * @param publishTopic
      * @return
      */
-    List<Subscribe> matchTopic(String publishTopic);
+    Collection<Subscribe> matchTopic(String publishTopic);
 
     /**
      * 共享topic匹配订阅客户端
@@ -45,5 +45,23 @@ public interface ISubscribeStore {
      * @param publishTopic
      * @return
      */
-    List<Subscribe> matchShareTopic(String publishTopic);
+    Collection<Subscribe> matchShareTopic(String publishTopic);
+
+    /**
+     * 更新client订阅所在的节点
+     *
+     * @param clientId
+     * @param brokerId
+     */
+    void upNode(String clientId, String brokerId);
+
+
+    /**
+     * 客户端订阅已存在
+     *
+     * @param clientId
+     * @param topic
+     * @return
+     */
+    boolean repeatSubscribe(String clientId, String topic);
 }

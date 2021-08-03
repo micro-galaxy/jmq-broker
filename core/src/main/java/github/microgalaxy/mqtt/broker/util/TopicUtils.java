@@ -1,9 +1,15 @@
 package github.microgalaxy.mqtt.broker.util;
 
+import github.microgalaxy.mqtt.broker.client.Subscribe;
 import github.microgalaxy.mqtt.broker.config.BrokerConstant;
+import org.apache.logging.log4j.util.Strings;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
-import java.util.Objects;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -49,28 +55,62 @@ public abstract class TopicUtils {
             String tier = subscriptTopics[i];
             if (Objects.equals(tier, BrokerConstant.ShareSubscribe.SUBSCRIBE_ONE_TIER) ||
                     Objects.equals(tier, BrokerConstant.ShareSubscribe.SUBSCRIBE_MULTIPLE_TIER))
-                return publishTopics[i] + BrokerConstant.ShareSubscribe.SUBSCRIBE_TIER_SPLIT;
-            return tier + BrokerConstant.ShareSubscribe.SUBSCRIBE_TIER_SPLIT;
+                return publishTopics[i];
+            return tier;
         }).collect(Collectors.joining(BrokerConstant.ShareSubscribe.SUBSCRIBE_TIER_SPLIT));
         return Objects.equals(matchingTopic, subscriptTopic);
     }
 
     public static boolean matchingShareTopic(String subscriptTopic, String publishTopic) {
-        // $share/{group}
-        int shareTier = 2;
-        String[] publishTopics = publishTopic.split(BrokerConstant.ShareSubscribe.SUBSCRIBE_TIER_SPLIT);
-        String[] subscriptTopics = subscriptTopic.split(BrokerConstant.ShareSubscribe.SUBSCRIBE_TIER_SPLIT);
-        if (publishTopics.length < subscriptTopics.length) return false;
-        String matchingTopic = IntStream.range(0, subscriptTopics.length).mapToObj(i -> {
-            String tier = subscriptTopics[i];
-            if (i < shareTier) return tier + BrokerConstant.ShareSubscribe.SUBSCRIBE_TIER_SPLIT;
-            if (Objects.equals(tier, BrokerConstant.ShareSubscribe.SUBSCRIBE_ONE_TIER) ||
-                    Objects.equals(tier, BrokerConstant.ShareSubscribe.SUBSCRIBE_MULTIPLE_TIER))
-                return publishTopics[i] + BrokerConstant.ShareSubscribe.SUBSCRIBE_TIER_SPLIT;
-            return tier + BrokerConstant.ShareSubscribe.SUBSCRIBE_TIER_SPLIT;
-        }).collect(Collectors.joining(BrokerConstant.ShareSubscribe.SUBSCRIBE_TIER_SPLIT));
-        return Objects.equals(matchingTopic, subscriptTopic);
+        String baseSubscriptTopic = shareToBaseTopic(subscriptTopic);
+        return matchingTopic(baseSubscriptTopic, publishTopic);
+    }
+
+    /**
+     * filter shareTopic、normalTopic
+     *
+     * @param shareSubscribes
+     * @param subscribes
+     * @return
+     */
+    public static Collection<Subscribe> filterTopic(Collection<Subscribe> shareSubscribes, Collection<Subscribe> subscribes) {
+        if (CollectionUtils.isEmpty(shareSubscribes)) return subscribes;
+        Collection<Subscribe> shareSubscribeList = shareSubscribes.stream()
+                .collect(Collectors.groupingBy(Subscribe::getTopic,
+                        Collectors.collectingAndThen(Collectors.toList(), randomClient(subscribes)))).values();
+        if (CollectionUtils.isEmpty(subscribes)) return shareSubscribeList;
+        subscribes.addAll(shareSubscribeList);
+        return subscribes;
     }
 
 
+    private static Function<List<Subscribe>, Subscribe> randomClient(Collection<Subscribe> subscribes) {
+        Map<String, List<Subscribe>> subscribeMap = subscribes.stream()
+                .collect(Collectors.groupingBy(k -> String.join("-", k.getTopic(), k.getClientId()), Collectors.toList()));
+        return l -> {
+            //filter share subscribe
+            l.forEach(v -> {
+                List<Subscribe> removeSubscribe = subscribeMap.get(String.join("-", shareToBaseTopic(v.getTopic()), v.getClientId()));
+                subscribes.removeAll(removeSubscribe);
+            });
+
+            Subscribe shareSubscribe = l.get((int) System.currentTimeMillis() % l.size());
+            List<Subscribe> subscribe = Optional.ofNullable(subscribeMap.get(String.join("-",
+                    shareToBaseTopic(shareSubscribe.getTopic()), shareSubscribe.getClientId())))
+                    .orElse(Collections.emptyList());
+            if (CollectionUtils.isEmpty(subscribe)) return shareSubscribe;
+            return shareSubscribe.getSubTimestamp() > subscribe.get(0).getSubTimestamp() ? shareSubscribe : subscribe.get(0);
+        };
+    }
+
+    private static String shareToBaseTopic(String shareTopic) {
+        // $share/{group}
+        int shareTier = 2;
+        String[] shareTopicSplit = shareTopic.split(BrokerConstant.ShareSubscribe.SUBSCRIBE_TIER_SPLIT);
+        return IntStream.range(0, shareTopicSplit.length).mapToObj(i -> {
+            if (i < shareTier) return Strings.EMPTY;
+            return shareTopicSplit[i];
+        }).filter(v -> !Objects.equals(v, Strings.EMPTY))
+                .collect(Collectors.joining(BrokerConstant.ShareSubscribe.SUBSCRIBE_TIER_SPLIT));
+    }
 }
