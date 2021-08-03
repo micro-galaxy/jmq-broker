@@ -34,10 +34,11 @@ public abstract class TopicUtils {
                 return false;
         }
         //valid share topic
-        if (StringUtils.startsWithIgnoreCase(topicName, "$") &&
-                !StringUtils.startsWithIgnoreCase(topicName,
-                        BrokerConstant.ShareSubscribe.SUBSCRIBE_SHARE_PREFIX + BrokerConstant.ShareSubscribe.SUBSCRIBE_TIER_SPLIT))
-            return false;
+        if (StringUtils.startsWithIgnoreCase(topicName, "$"))
+            return StringUtils.startsWithIgnoreCase(topicName,
+                    BrokerConstant.ShareSubscribe.SUBSCRIBE_SHARE_PREFIX + BrokerConstant.ShareSubscribe.SUBSCRIBE_TIER_SPLIT)
+                    && validTopic(shareToBaseTopic(topicName));
+
         //valid one tier matching
         if (topicName.contains(BrokerConstant.ShareSubscribe.SUBSCRIBE_ONE_TIER)) {
             if (StringUtils.countOccurrencesOf(topicName, BrokerConstant.ShareSubscribe.SUBSCRIBE_ONE_TIER) !=
@@ -58,7 +59,9 @@ public abstract class TopicUtils {
                 return publishTopics[i];
             return tier;
         }).collect(Collectors.joining(BrokerConstant.ShareSubscribe.SUBSCRIBE_TIER_SPLIT));
-        return Objects.equals(matchingTopic, subscriptTopic);
+        if (subscriptTopic.endsWith(BrokerConstant.ShareSubscribe.SUBSCRIBE_MULTIPLE_TIER))
+            return Objects.equals(matchingTopic, subscriptTopic);
+        return Objects.equals(matchingTopic, publishTopic);
     }
 
     public static boolean matchingShareTopic(String subscriptTopic, String publishTopic) {
@@ -91,10 +94,10 @@ public abstract class TopicUtils {
             //filter share subscribe
             l.forEach(v -> {
                 List<Subscribe> removeSubscribe = subscribeMap.get(String.join("-", shareToBaseTopic(v.getTopic()), v.getClientId()));
-                subscribes.removeAll(removeSubscribe);
+                if (!CollectionUtils.isEmpty(removeSubscribe)) subscribes.removeAll(removeSubscribe);
             });
 
-            Subscribe shareSubscribe = l.get((int) System.currentTimeMillis() % l.size());
+            Subscribe shareSubscribe = l.get((int) (System.currentTimeMillis() % l.size()));
             List<Subscribe> subscribe = Optional.ofNullable(subscribeMap.get(String.join("-",
                     shareToBaseTopic(shareSubscribe.getTopic()), shareSubscribe.getClientId())))
                     .orElse(Collections.emptyList());
