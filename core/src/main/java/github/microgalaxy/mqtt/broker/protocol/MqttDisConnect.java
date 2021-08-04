@@ -56,4 +56,11 @@ public class MqttDisConnect<T extends MqttMessageType, M extends MqttMessage> ex
     }
 
 
+    public void cleanSession(Channel channel) {
+        String clientId = (String) channel.attr(AttributeKey.valueOf("clientId")).get();
+        subscribeServer.removeClient(clientId);
+        dupPublishMessageServer.removeClient(clientId);
+        dupPubRelMessageServer.removeClient(clientId);
+        sessionServer.remove(clientId);
+    }
 }

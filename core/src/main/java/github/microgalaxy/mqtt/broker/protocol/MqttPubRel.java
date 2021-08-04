@@ -26,7 +26,7 @@ public class MqttPubRel<T extends MqttMessageType, M extends MqttMessage> extend
         MqttMessage pubCompMqttMessage = MqttMessageFactory.newMessage(
                 new MqttFixedHeader(MqttMessageType.PUBCOMP, false, MqttQoS.AT_MOST_ONCE, false, 0),
                 MqttMessageIdVariableHeader.from(messageId), null);
-        log.debug("PUBREL - PubRel request arrives: clientId:{}, messageId:{}",clientId, messageId);
+        log.debug("<== PUBREL - PubRel request arrives: clientId:{}, messageId:{}",clientId, messageId);
         channel.writeAndFlush(pubCompMqttMessage);
     }
 

@@ -115,7 +115,7 @@ public class MqttSubscribe<T extends MqttMessageType, M extends MqttSubscribeMes
                     .build();
             channel.writeAndFlush(publishMessage);
             if (log.isDebugEnabled())
-                log.debug("PUBLISH - Send retain message: clientId:{}, topic:{}, qos:{}, messageId:{}",
+                log.debug("==> PUBLISH - Send retain message: clientId:{}, topic:{}, qos:{}, messageId:{}",
                         channel.attr(AttributeKey.valueOf("clientId")).get(), m.getTopic(), targetQos.value(), messageId);
         });
     }

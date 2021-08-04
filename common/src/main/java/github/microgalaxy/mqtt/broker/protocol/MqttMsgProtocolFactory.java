@@ -47,4 +47,8 @@ public class MqttMsgProtocolFactory {
             LOGGER.warn("The Mqtt message handler not implemented, message:{}", msg.toString());
         }
     }
+
+    public static <T> T getHandler(MqttMessageType type, Class<T> clazz) {
+        return clazz.cast(MQTT_MSG_PROTOCOL_POOL.get(type));
+    }
 }

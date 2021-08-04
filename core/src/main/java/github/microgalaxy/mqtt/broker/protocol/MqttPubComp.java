@@ -34,7 +34,7 @@ public class MqttPubComp<T extends MqttMessageType, M extends MqttMessage> exten
         dupPubRelMessageServer.remove((String) channel.attr(AttributeKey.valueOf("clientId")).get(), messageId);
         messageIdServer.releaseMessageId(messageId);
         if (log.isDebugEnabled())
-            log.debug("PUBCOMP - PubComp request arrives: clientId:{}, messageId:{}",
+            log.debug("<== PUBCOMP - PubComp request arrives: clientId:{}, messageId:{}",
                     channel.attr(AttributeKey.valueOf("clientId")).get(), messageId);
     }
 

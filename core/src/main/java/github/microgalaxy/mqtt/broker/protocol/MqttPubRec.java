@@ -32,7 +32,7 @@ public class MqttPubRec<T extends MqttMessageType, M extends MqttMessage> extend
         String clientId = (String) channel.attr(AttributeKey.valueOf("clientId")).get();
         int messageId = ((MqttMessageIdVariableHeader) msg.variableHeader()).messageId();
         if (log.isDebugEnabled())
-            log.debug("PUBREC - PubRec request arrives: clientId:{}, messageId:{}",clientId, messageId);
+            log.debug("<== PUBREC - PubRec request arrives: clientId:{}, messageId:{}",clientId, messageId);
         dupPublishMessageServer.remove(clientId, messageId);
         MqttMessage pubRelMessage = MqttMessageFactory.newMessage(
                 new MqttFixedHeader(MqttMessageType.PUBREL, false, MqttQoS.AT_MOST_ONCE, false, 0),

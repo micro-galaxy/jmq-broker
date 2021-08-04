@@ -6,6 +6,7 @@ import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.ObjectUtils;
 
 import javax.annotation.PostConstruct;
 import java.util.Arrays;
@@ -18,6 +19,7 @@ import java.util.Optional;
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
 public abstract class AbstractMqttMsgProtocol<T, M> implements IMqttMsgProtocol<M> {
+    private Class<?> clazz;
     protected final Logger log = LoggerFactory.getLogger(this.getClass());
 
     /**
@@ -52,11 +54,13 @@ public abstract class AbstractMqttMsgProtocol<T, M> implements IMqttMsgProtocol<
      * @return
      */
     public Class<?> getMessageType() {
+        if (!ObjectUtils.isEmpty(clazz)) return clazz;
         Optional<? extends Class<?>> optional = Arrays.stream(getClass().getMethods())
                 .filter(method -> method.getName().equals(IMqttMsgProtocol.class.getMethods()[0].getName()))
                 .filter(method -> Arrays.stream(method.getParameterTypes()).anyMatch(type -> Objects.equals(type.getSuperclass(), MqttMessage.class)))
                 .map(method -> method.getParameterTypes()[1])
                 .findFirst();
-        return optional.isPresent() ? optional.get() : Object.class;
+        clazz = optional.isPresent() ? optional.get() : Object.class;
+        return clazz;
     }
 }

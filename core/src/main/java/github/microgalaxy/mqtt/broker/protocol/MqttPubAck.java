@@ -33,7 +33,7 @@ public class MqttPubAck<T extends MqttMessageType, M extends MqttMessage> extend
         dupPublishMessageServer.remove((String) channel.attr(AttributeKey.valueOf("clientId")).get(), messageId);
         messageIdServer.releaseMessageId(messageId);
         if (log.isDebugEnabled())
-            log.debug("PUBACK - PubAck request arrives: clientId:{}, messageId:{}",
+            log.debug("<== PUBACK - PubAck request arrives: clientId:{}, messageId:{}",
                     channel.attr(AttributeKey.valueOf("clientId")).get(), messageId);
     }
 
