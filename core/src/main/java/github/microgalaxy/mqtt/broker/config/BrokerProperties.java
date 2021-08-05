@@ -11,7 +11,7 @@ import java.util.UUID;
  * @author Microgalaxy（https://github.com/micro-galaxy）
  */
 @Configuration
-@ConfigurationProperties("spring.jmq.broker")
+@ConfigurationProperties("jmq.broker")
 public class BrokerProperties {
     public static final String JMQ_BROKER = "jmq-broker-";
 

@@ -49,6 +49,9 @@ public class MqttMsgProtocolFactory {
     }
 
     public static <T> T getHandler(MqttMessageType type, Class<T> clazz) {
+        AbstractMqttMsgProtocol msgHandler = MQTT_MSG_PROTOCOL_POOL.get(type);
+        if(ObjectUtils.isEmpty(msgHandler))
+            throw new IllegalArgumentException("No implement of the target type found");
         return clazz.cast(MQTT_MSG_PROTOCOL_POOL.get(type));
     }
 }

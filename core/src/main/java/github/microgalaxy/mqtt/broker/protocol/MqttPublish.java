@@ -168,8 +168,7 @@ public class MqttPublish<T extends MqttMessageType, M extends MqttPublishMessage
     public void sendWillMessage(Channel channel) {
         String clientId = (String) channel.attr(AttributeKey.valueOf("clientId")).get();
         Session session = sessionStoreServer.get(clientId);
-        if (!ObjectUtils.isEmpty(session) && !ObjectUtils.isEmpty(session.getWillMessage()))
-            sendPublishMessage(session.getWillMessage());
+        if (ObjectUtils.isEmpty(session) || ObjectUtils.isEmpty(session.getWillMessage())) return;
+        sendPublishMessage(session.getWillMessage());
     }
-
 }

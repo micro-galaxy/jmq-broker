@@ -32,9 +32,9 @@ public class MqttMsgHandler extends MqttProtocolHandler {
         MqttPublish mqttPublish = MqttMsgProtocolFactory.getHandler(MqttMessageType.PUBLISH, MqttPublish.class);
         mqttPublish.sendWillMessage(ctx.channel());
         ctx.channel().close();
-        MqttMsgProtocolFactory.getHandler(MqttMessageType.PUBLISH, MqttDisConnect.class)
+        MqttMsgProtocolFactory.getHandler(MqttMessageType.DISCONNECT, MqttDisConnect.class)
                 .cleanSession(ctx.channel());
-        log.info("The server closed an existing connection, reason: The client heartbeat timeout, clientId:{}, ", ctx.channel().attr(AttributeKey.valueOf("clientId")).get());
+        log.info("DISCONNECT - The server closed an existing connection, reason: The client heartbeat timeout, clientId:{}, ", ctx.channel().attr(AttributeKey.valueOf("clientId")).get());
     }
 
     @Override
@@ -44,9 +44,9 @@ public class MqttMsgHandler extends MqttProtocolHandler {
             return;
         }
         ctx.channel().close();
-        MqttMsgProtocolFactory.getHandler(MqttMessageType.PUBLISH, MqttDisConnect.class)
+        MqttMsgProtocolFactory.getHandler(MqttMessageType.DISCONNECT, MqttDisConnect.class)
                 .cleanSession(ctx.channel());
-        log.info("The client forcibly closed an existing connection:{} ,clientId:{}", cause.getMessage(),
+        log.info("DISCONNECT - The client forcibly closed an existing connection:{} ,clientId:{}", cause.getMessage(),
                 ctx.channel().attr(AttributeKey.valueOf("clientId")).get(), cause);
     }
 }
