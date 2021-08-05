@@ -19,7 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -37,7 +36,7 @@ public class MqttSubscribe<T extends MqttMessageType, M extends MqttSubscribeMes
     @Autowired
     private ISubscribeStore subscribeStoreServer;
     @Autowired
-    private IDupRetainMessage retainMessageServer;
+    private IDupRetainMessage dupRetainMessageServer;
     @Autowired
     private IMessagePacketId messagePacketIdServer;
 
@@ -101,7 +100,7 @@ public class MqttSubscribe<T extends MqttMessageType, M extends MqttSubscribeMes
     }
 
     private void sendRetainMessage(Channel channel, String subscribeTopic, MqttQoS qos) {
-        List<RetainMessage> retainMessages = retainMessageServer.match(subscribeTopic);
+        List<RetainMessage> retainMessages = dupRetainMessageServer.match(subscribeTopic);
         retainMessages.forEach(m -> {
             MqttQoS targetQos = MqttQoS.valueOf(Math.min(m.getQos().value(), qos.value()));
             int messageId = MqttQoS.AT_MOST_ONCE == targetQos ? 0 :

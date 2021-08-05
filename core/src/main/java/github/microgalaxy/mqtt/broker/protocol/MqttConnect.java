@@ -28,12 +28,12 @@ import java.net.InetSocketAddress;
  */
 @Component
 public class MqttConnect<T extends MqttMessageType, M extends MqttConnectMessage> extends AbstractMqttMsgProtocol<T, M> {
-    @Autowired
+    @Autowired(required = false)
     private LoginAuthInterface authServer;
     @Autowired
     private ISessionStore sessionServer;
     @Autowired
-    private ISubscribeStore subscribeServer;
+    private ISubscribeStore subscribeStoreServer;
     @Autowired
     private IDupPublishMessage dupPublishMessageServer;
     @Autowired
@@ -105,6 +105,7 @@ public class MqttConnect<T extends MqttMessageType, M extends MqttConnectMessage
         InetSocketAddress socketAddress = (InetSocketAddress) channel.remoteAddress();
         LoginAuth loginMode = new LoginAuth(payload.clientIdentifier(), payload.userName(), payload.password(),
                 socketAddress.getHostString(), mqttVersion.name(), socketAddress.getPort());
+        if(ObjectUtils.isEmpty(authServer)) return;
         boolean authOk = authServer.loginAuth(loginMode);
         if (!authOk)
             throw new MqttException(MqttVersion.MQTT_5 == mqttVersion ?
@@ -121,11 +122,11 @@ public class MqttConnect<T extends MqttMessageType, M extends MqttConnectMessage
         if (!ObjectUtils.isEmpty(previousSession)) {
             if (previousSession.isCleanSession()) {
                 sessionServer.remove(clientId);
-                subscribeServer.removeClient(clientId);
+                subscribeStoreServer.removeClient(clientId);
                 dupPublishMessageServer.removeClient(clientId);
                 dupPubRelMessageServer.removeClient(clientId);
             }else {
-                subscribeServer.upNode(clientId,brokerProperties.getBrokerId());
+                subscribeStoreServer.upNode(clientId,brokerProperties.getBrokerId());
             }
             previousSession.getChannel().close();
         }

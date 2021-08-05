@@ -22,16 +22,6 @@
             <artifactId>core</artifactId>
             <version>${jmq-broker.version}</version>
         </dependency>
-        <dependency>
-            <groupId>github.micro-galaxy</groupId>
-            <artifactId>dashboard</artifactId>
-            <version>${jmq-broker.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>github.micro-galaxy</groupId>
-            <artifactId>plugin</artifactId>
-            <version>${jmq-broker.version}</version>
-        </dependency>
 
 
     </dependencies>

@@ -3,8 +3,6 @@ package github.microgalaxy.mqtt.broker.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.UUID;
-
 /**
  * 服务配置
  *
@@ -13,12 +11,10 @@ import java.util.UUID;
 @Configuration
 @ConfigurationProperties("jmq.broker")
 public class BrokerProperties {
-    public static final String JMQ_BROKER = "jmq-broker-";
-
     /**
      * 节点id
      */
-    private final String brokerId = JMQ_BROKER + UUID.randomUUID().toString();
+    private String brokerId;
     /**
      * mqtt默认端口：1883
      */
@@ -88,15 +84,19 @@ public class BrokerProperties {
     /**
      * 集群配置, 基于组播发现
      */
-    private String multicastGroupIp;
+    private String clusterMulticastGroupIp;
 
     /**
      * 集群配置, 当组播模式禁用时, 使用静态IP开启配置集群
      */
-    private String[] staticIps;
+    private String[] clusterStaticIps;
 
     public String getBrokerId() {
         return brokerId;
+    }
+
+    public void setBrokerId(String brokerId) {
+        this.brokerId = brokerId;
     }
 
     public int getMqttPort() {
@@ -203,19 +203,19 @@ public class BrokerProperties {
         this.enableMulticastGroup = enableMulticastGroup;
     }
 
-    public String getMulticastGroupIp() {
-        return multicastGroupIp;
+    public String getClusterMulticastGroupIp() {
+        return clusterMulticastGroupIp;
     }
 
-    public void setMulticastGroupIp(String multicastGroupIp) {
-        this.multicastGroupIp = multicastGroupIp;
+    public void setClusterMulticastGroupIp(String clusterMulticastGroupIp) {
+        this.clusterMulticastGroupIp = clusterMulticastGroupIp;
     }
 
-    public String[] getStaticIps() {
-        return staticIps;
+    public String[] getClusterStaticIps() {
+        return clusterStaticIps;
     }
 
-    public void setStaticIps(String[] staticIps) {
-        this.staticIps = staticIps;
+    public void setClusterStaticIps(String[] clusterStaticIps) {
+        this.clusterStaticIps = clusterStaticIps;
     }
 }

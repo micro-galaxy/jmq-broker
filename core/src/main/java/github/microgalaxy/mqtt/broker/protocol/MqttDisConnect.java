@@ -21,7 +21,7 @@ public class MqttDisConnect<T extends MqttMessageType, M extends MqttMessage> ex
     @Autowired
     private ISessionStore sessionServer;
     @Autowired
-    private ISubscribeStore subscribeServer;
+    private ISubscribeStore subscribeStoreServer;
     @Autowired
     private IDupPublishMessage dupPublishMessageServer;
     @Autowired
@@ -37,7 +37,7 @@ public class MqttDisConnect<T extends MqttMessageType, M extends MqttMessage> ex
         String clientId = (String) channel.attr(AttributeKey.valueOf("clientId")).get();
         Session session = sessionServer.get(clientId);
         if (session.isCleanSession()) {
-            subscribeServer.removeClient(clientId);
+            subscribeStoreServer.removeClient(clientId);
             dupPublishMessageServer.removeClient(clientId);
             dupPubRelMessageServer.removeClient(clientId);
         }
@@ -58,7 +58,7 @@ public class MqttDisConnect<T extends MqttMessageType, M extends MqttMessage> ex
 
     public void cleanSession(Channel channel) {
         String clientId = (String) channel.attr(AttributeKey.valueOf("clientId")).get();
-        subscribeServer.removeClient(clientId);
+        subscribeStoreServer.removeClient(clientId);
         dupPublishMessageServer.removeClient(clientId);
         dupPubRelMessageServer.removeClient(clientId);
         sessionServer.remove(clientId);

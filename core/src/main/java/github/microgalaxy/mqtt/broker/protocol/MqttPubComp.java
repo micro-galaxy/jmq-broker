@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class MqttPubComp<T extends MqttMessageType, M extends MqttMessage> extends AbstractMqttMsgProtocol<T, M> {
     @Autowired
-    private IMessagePacketId messageIdServer;
+    private IMessagePacketId messagePacketIdServer;
     @Autowired
     private IDupPubRelMessage dupPubRelMessageServer;
 
@@ -32,7 +32,7 @@ public class MqttPubComp<T extends MqttMessageType, M extends MqttMessage> exten
     public void onMqttMsg(Channel channel, M msg) {
         int messageId = ((MqttMessageIdVariableHeader) msg.variableHeader()).messageId();
         dupPubRelMessageServer.remove((String) channel.attr(AttributeKey.valueOf("clientId")).get(), messageId);
-        messageIdServer.releaseMessageId(messageId);
+        messagePacketIdServer.releaseMessageId(messageId);
         if (log.isDebugEnabled())
             log.debug("<== PUBCOMP - PubComp request arrives: clientId:{}, messageId:{}",
                     channel.attr(AttributeKey.valueOf("clientId")).get(), messageId);
