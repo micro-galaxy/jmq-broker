@@ -14,14 +14,14 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Component
 public class SubscribeStoreImpl implements ISubscribeStore {
-    private final Map<String, Map<String, Subscribe>> clientSubscribeCatch = new ConcurrentHashMap<>();
-    private final Map<String, Map<String, Subscribe>> clientShareSubscribeCatch = new ConcurrentHashMap<>();
+    private final Map<String, Map<String, Subscribe>> clientSubscribeCache = new ConcurrentHashMap<>();
+    private final Map<String, Map<String, Subscribe>> clientShareSubscribeCache = new ConcurrentHashMap<>();
 
     @Override
     public void put(String topic, Subscribe subscribe) {
         Map<String, Map<String, Subscribe>> topicSubscribeMap =
                 topic.startsWith(BrokerConstant.ShareSubscribe.SUBSCRIBE_SHARE_PREFIX) ?
-                        clientShareSubscribeCatch : clientSubscribeCatch;
+                        clientShareSubscribeCache : clientSubscribeCache;
         Map<String, Subscribe> subscribeMap = topicSubscribeMap.containsKey(topic) ?
                 topicSubscribeMap.get(topic) : new ConcurrentHashMap<>();
         subscribeMap.put(subscribe.getClientId(), subscribe);
@@ -32,7 +32,7 @@ public class SubscribeStoreImpl implements ISubscribeStore {
     public void remove(String topic, String clientId) {
         Map<String, Map<String, Subscribe>> topicSubscribeMap =
                 topic.startsWith(BrokerConstant.ShareSubscribe.SUBSCRIBE_SHARE_PREFIX) ?
-                        clientShareSubscribeCatch : clientSubscribeCatch;
+                        clientShareSubscribeCache : clientSubscribeCache;
         if (!topicSubscribeMap.containsKey(topic)) return;
         Map<String, Subscribe> subscribeMap = topicSubscribeMap.get(topic);
         if (!subscribeMap.containsKey(clientId)) return;
@@ -46,29 +46,29 @@ public class SubscribeStoreImpl implements ISubscribeStore {
 
     @Override
     public void removeClient(String clientId) {
-        clientSubscribeCatch.forEach((key, subscribeMap) -> {
+        clientSubscribeCache.forEach((key, subscribeMap) -> {
             if (!subscribeMap.containsKey(clientId)) return;
             subscribeMap.remove(clientId);
             if (CollectionUtils.isEmpty(subscribeMap)) {
                 subscribeMap.remove(key);
             } else {
-                clientSubscribeCatch.put(key, subscribeMap);
+                clientSubscribeCache.put(key, subscribeMap);
             }
         });
-        clientShareSubscribeCatch.forEach((key, subscribeMap) -> {
+        clientShareSubscribeCache.forEach((key, subscribeMap) -> {
             if (!subscribeMap.containsKey(clientId)) return;
             subscribeMap.remove(clientId);
             if (CollectionUtils.isEmpty(subscribeMap)) {
                 subscribeMap.remove(key);
             } else {
-                clientShareSubscribeCatch.put(key, subscribeMap);
+                clientShareSubscribeCache.put(key, subscribeMap);
             }
         });
     }
 
     @Override
     public Collection<Subscribe> matchTopic(String publishTopic) {
-        return clientSubscribeCatch.entrySet().stream()
+        return clientSubscribeCache.entrySet().stream()
                 .filter(v -> TopicUtils.matchingTopic(v.getKey(), publishTopic))
                 .map(v -> v.getValue().values())
                 .collect(ArrayList::new, ArrayList::addAll, ArrayList::addAll);
@@ -76,7 +76,7 @@ public class SubscribeStoreImpl implements ISubscribeStore {
 
     @Override
     public Collection<Subscribe> matchShareTopic(String publishTopic) {
-        return clientShareSubscribeCatch.entrySet().stream()
+        return clientShareSubscribeCache.entrySet().stream()
                 .filter(v -> TopicUtils.matchingShareTopic(v.getKey(), publishTopic))
                 .map(v -> v.getValue().values())
                 .collect(ArrayList::new, ArrayList::addAll, ArrayList::addAll);
@@ -84,11 +84,11 @@ public class SubscribeStoreImpl implements ISubscribeStore {
 
     @Override
     public void upNode(String clientId, String brokerId) {
-        clientSubscribeCatch.forEach((key, value) -> {
+        clientSubscribeCache.forEach((key, value) -> {
             Subscribe subscribe = value.get(clientId);
             if (!ObjectUtils.isEmpty(subscribe)) subscribe.setJmqId(brokerId);
         });
-        clientShareSubscribeCatch.forEach((key, value) -> {
+        clientShareSubscribeCache.forEach((key, value) -> {
             Subscribe subscribe = value.get(clientId);
             if (!ObjectUtils.isEmpty(subscribe)) subscribe.setJmqId(brokerId);
         });
@@ -96,8 +96,8 @@ public class SubscribeStoreImpl implements ISubscribeStore {
 
     @Override
     public boolean repeatSubscribe(String clientId, String topic) {
-        Object subscribe = Optional.ofNullable(clientSubscribeCatch.get(topic)).orElse(Collections.EMPTY_MAP).get(clientId);
-        Object shareSubscribe = Optional.ofNullable(clientShareSubscribeCatch.get(topic)).orElse(Collections.EMPTY_MAP).get(clientId);
+        Object subscribe = Optional.ofNullable(clientSubscribeCache.get(topic)).orElse(Collections.EMPTY_MAP).get(clientId);
+        Object shareSubscribe = Optional.ofNullable(clientShareSubscribeCache.get(topic)).orElse(Collections.EMPTY_MAP).get(clientId);
         return !ObjectUtils.isEmpty(subscribe) || !ObjectUtils.isEmpty(shareSubscribe);
     }
 }

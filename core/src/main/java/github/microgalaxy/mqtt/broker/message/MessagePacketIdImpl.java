@@ -13,14 +13,14 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MessagePacketIdImpl implements IMessagePacketId {
     private final int MIN_PACKET_ID = 1;
     private final int MAX_PACKET_ID = 1 << 16 - 1;
-    private final Map<Integer, Integer> messageIdCatch = new ConcurrentHashMap<>(MAX_PACKET_ID);
+    private final Map<Integer, Integer> messageIdCache = new ConcurrentHashMap<>(MAX_PACKET_ID);
     private int currentPacketId = MIN_PACKET_ID;
 
     @Override
     public synchronized int nextMessageId(MqttVersion mqttVersion) {
         for (; ; ) {
-            if (!messageIdCatch.containsKey(currentPacketId)) {
-                messageIdCatch.put(currentPacketId, currentPacketId);
+            if (!messageIdCache.containsKey(currentPacketId)) {
+                messageIdCache.put(currentPacketId, currentPacketId);
                 return currentPacketId;
             }
             currentPacketId++;
@@ -30,6 +30,6 @@ public class MessagePacketIdImpl implements IMessagePacketId {
 
     @Override
     public synchronized void releaseMessageId(int messageId) {
-        messageIdCatch.remove(messageId);
+        messageIdCache.remove(messageId);
     }
 }

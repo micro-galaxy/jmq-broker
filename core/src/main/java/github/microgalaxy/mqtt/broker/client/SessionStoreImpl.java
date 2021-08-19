@@ -10,20 +10,20 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Component
 public class SessionStoreImpl implements ISessionStore {
-    private final Map<String, Session> clientSessionCatch = new ConcurrentHashMap<>();
+    private final Map<String, Session> clientSessionCache = new ConcurrentHashMap<>();
 
     @Override
     public void put(String clientId, Session session) {
-        clientSessionCatch.put(clientId, session);
+        clientSessionCache.put(clientId, session);
     }
 
     @Override
     public Session get(String clientId) {
-        return clientSessionCatch.get(clientId);
+        return clientSessionCache.get(clientId);
     }
 
     @Override
     public void remove(String clientId) {
-        clientSessionCatch.remove(clientId);
+        clientSessionCache.remove(clientId);
     }
 }

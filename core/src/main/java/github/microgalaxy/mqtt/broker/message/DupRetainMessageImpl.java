@@ -13,21 +13,21 @@ import java.util.stream.Collectors;
  */
 @Component
 public class DupRetainMessageImpl implements IDupRetainMessage {
-    private final Map<String, RetainMessage> retainMessageCatch = new ConcurrentHashMap<>();
+    private final Map<String, RetainMessage> retainMessageCache = new ConcurrentHashMap<>();
 
     @Override
     public void put(String topic, RetainMessage retainMessage) {
-        retainMessageCatch.put(topic, retainMessage);
+        retainMessageCache.put(topic, retainMessage);
     }
 
     @Override
     public RetainMessage get(String topic) {
-        return retainMessageCatch.get(topic);
+        return retainMessageCache.get(topic);
     }
 
     @Override
     public List<RetainMessage> match(String subscribeTopic) {
-        return retainMessageCatch.entrySet().stream()
+        return retainMessageCache.entrySet().stream()
                 .filter(v -> TopicUtils.matchingTopic(subscribeTopic,v.getKey()))
                 .map(Map.Entry::getValue)
                 .collect(Collectors.toList());
@@ -35,6 +35,6 @@ public class DupRetainMessageImpl implements IDupRetainMessage {
 
     @Override
     public void remove(String topic) {
-        retainMessageCatch.remove(topic);
+        retainMessageCache.remove(topic);
     }
 }
